@@ -1,42 +1,6 @@
+import { CreateUserInput, CreateUserOutput, FindAllUsersOutput, GetUserOutput, UpdateUserInput } from "./user.dto";
 import { UserEntity } from "./user.entity";
 import { UserRepository } from "./user.repository";
-
-export type CreateUserInput = {
-  name: string;
-  email: string;
-  password: string;
-};
-
-export type CreateUserOutput = {
-  id: string;
-  name: string;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-export type FindAllUsersOutput = {
-  users: {
-    id: string;
-    name: string;
-    email: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }[];
-};
-
-export type GetUserOutput = {
-  id: string;
-  name: string;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-export type UpdateUserInput = {
-  id: string;
-  name: string;
-};
 
 export class UserService {
   constructor(private readonly repository: UserRepository) {}
