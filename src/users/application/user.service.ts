@@ -1,6 +1,6 @@
+import { UserEntity } from "../domain/user.entity";
+import { UserRepository } from "../domain/user.repository";
 import { CreateUserInput, CreateUserOutput, FindAllUsersOutput, GetUserOutput, UpdateUserInput } from "./user.dto";
-import { UserEntity } from "./user.entity";
-import { UserRepository } from "./user.repository";
 
 export class UserService {
   constructor(private readonly repository: UserRepository) {}
