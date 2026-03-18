@@ -1,15 +1,11 @@
 import "dotenv/config";
-import express, { Router } from "express";
-import { UserController } from "./users/infra/user.controller";
+import express from "express";
+import { userRoutes } from "./users/infra/user.routes";
 
 const app = express();
-app.use(express.json()); 
+app.use(express.json());
 
-const router = Router();
-const userController = UserController.build();
-
-router.get("/", (req, res) => userController.get(req, res));
-app.use(router);
+app.use("/users", userRoutes());
 
 const PORT = Number(process.env.PORT) || 3000;
 app.listen(PORT, () => {
