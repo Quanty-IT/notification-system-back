@@ -1,2 +1,10 @@
+# Compiled output
 node_modules
 dist
+
+# Prisma generated files
+/generated/prisma
+
+# Environment variables
+.env
+.env.local
