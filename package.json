@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node -r tsconfig-paths/register src/main.ts"
+    "dev": "tsx src/main.ts"
   },
   "keywords": [],
   "author": "",
@@ -14,8 +14,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.0",
     "prisma": "^7.5.0",
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
