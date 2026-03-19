@@ -1,38 +1,23 @@
-export type CreateUserInput = {
-  name: string;
-  email: string;
-  password: string;
-};
+import { z } from "zod";
+import { createUserSchema, updateUserSchema } from "./user.schemas";
 
-export type CreateUserOutput = {
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
+export type UserOutput = {
   id: string;
   name: string;
   email: string;
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type CreateUserOutput = UserOutput;
+
+export type GetUserOutput = UserOutput;
 
 export type FindAllUsersOutput = {
-  users: {
-    id: string;
-    name: string;
-    email: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }[];
-};
-
-export type GetUserOutput = {
-  id: string;
-  name: string;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-export type UpdateUserInput = {
-  id: string;
-  name: string;
+  users: UserOutput[];
 };
 
 export type UpdateUserOutput = {

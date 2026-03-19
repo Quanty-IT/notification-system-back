@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
 import { prisma } from "../../infra/database/prisma.client";
+import {
+  createUserSchema,
+  updateUserSchema,
+  userIdSchema,
+} from "../application/user.schemas";
 import { UserService } from "../application/user.service";
 import { UserRepositoryPrisma } from "./user.repository.prisma";
 
@@ -16,58 +21,52 @@ export class UserController {
   }
 
   public async create(request: Request, response: Response) {
-    const { name, email, password } = request.body;
+    const input = createUserSchema.parse(request.body);
 
-    const output = await this.service.create({
-      name,
-      email,
-      password,
-    });
+    const output = await this.service.create(input);
 
-    response.status(201).json(output).send();
+    return response.status(201).json(output);
   }
 
   public async findAll(request: Request, response: Response) {
     const output = await this.service.findAll();
 
-    response.status(200).json(output).send();
+    return response.status(200).json(output);
   }
 
-  public async findById(request: Request<{ id: string }>, response: Response) {
-    const { id } = request.params;
-    if (!id) {
-      return response.status(400).json({ message: "Id is required" });
-    }
+  public async findById(
+    request: Request<{ id: string }>,
+    response: Response
+  ) {
+    const { id } = userIdSchema.parse(request.params);
 
     const output = await this.service.findById(id);
 
-    response.status(200).json(output).send();
+    return response.status(200).json(output);
   }
 
-  public async update(request: Request<{ id: string }>, response: Response) {
-    const { id } = request.params;
-    if (!id) {
-      return response.status(400).json({ message: "Id is required" });
-    }
-    
-    const { name } = request.body;
-
-    const output = await this.service.update({
-      id,
-      name,
+  public async update(
+    request: Request<{ id: string }>,
+    response: Response
+  ) {
+    const input = updateUserSchema.parse({
+      id: request.params.id,
+      name: request.body.name,
     });
 
-    response.status(200).json(output).send();
+    const output = await this.service.update(input);
+
+    return response.status(200).json(output);
   }
 
-  public async delete(request: Request<{ id: string }>, response: Response) {
-    const { id } = request.params;
-    if (!id) {
-      return response.status(400).json({ message: "Id is required" });
-    }
+  public async delete(
+    request: Request<{ id: string }>,
+    response: Response
+  ) {
+    const { id } = userIdSchema.parse(request.params);
 
     await this.service.delete(id);
 
-    response.status(204).send();
+    return response.status(204).send();
   }
 }
