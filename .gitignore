@@ -8,3 +8,6 @@ dist
 # Environment variables
 .env
 .env.local
+
+# HTTP requests
+*.http
