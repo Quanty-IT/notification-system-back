@@ -8,8 +8,8 @@ export class UserMapper {
       name: user.name,
       email: user.email,
       password: user.password,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
     });
   }
 
@@ -19,8 +19,8 @@ export class UserMapper {
       name: user.name,
       email: user.email,
       password: user.password,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      created_at: user.createdAt,
+      updated_at: user.updatedAt,
     };
   }
 }
