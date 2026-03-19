@@ -6,6 +6,11 @@ export class UserService {
   constructor(private readonly repository: UserRepository) {}
 
   async create(input: CreateUserInput): Promise<CreateUserOutput> {
+    const userExists = await this.repository.findByEmail(input.email);
+    if (userExists) {
+      throw new Error(`User with email ${input.email} already exists`);
+    }
+
     const user = UserEntity.create(
       input.name,
       input.email,
