@@ -1,24 +1,14 @@
 import { Request, Response } from "express";
-import { prisma } from "../../infra/database/prisma.client";
 import {
   createUserSchema,
   updateUserSchema,
   userIdSchema,
 } from "../application/user.schemas";
 import { UserService } from "../application/user.service";
-import { UserRepositoryPrisma } from "./user.repository.prisma";
 
 export class UserController {
-  private readonly service: UserService;
+  constructor(private readonly service: UserService) {}
 
-  private constructor() {
-    const repository = new UserRepositoryPrisma(prisma);
-    this.service = new UserService(repository);
-  }
-
-  public static build() {
-    return new UserController();
-  }
 
   public async create(request: Request, response: Response) {
     const input = createUserSchema.parse(request.body);

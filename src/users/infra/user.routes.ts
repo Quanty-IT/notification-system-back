@@ -1,3 +1,4 @@
+import { prisma } from "@/infra/database/prisma.client";
 import { registry } from "@/infra/http/swagger/swagger.registry";
 import { Router } from "express";
 import {
@@ -5,9 +6,10 @@ import {
   updateUserSchema,
   userIdSchema,
 } from "../application/user.schemas";
+import { UserService } from "../application/user.service";
 import { UserController } from "./user.controller";
+import { UserRepositoryPrisma } from "./user.repository.prisma";
 
-const controller = UserController.build();
 const BASE_PATH = "/users";
 const TAG = "Users";
 
@@ -97,6 +99,10 @@ registry.registerPath({
 
 export const userRoutes = () => {
   const router = Router();
+
+  const repository = new UserRepositoryPrisma(prisma);
+  const service = new UserService(repository);
+  const controller = new UserController(service);
 
   router.post("/", controller.create.bind(controller));
   router.get("/", controller.findAll.bind(controller));
