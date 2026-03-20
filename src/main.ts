@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
 
-import { errorHandler } from "./infra/http/error-handler";
+import { errorHandler } from "./infra/http/middlewares/error-handler";
 import { swaggerDoc } from "./infra/http/swagger/swagger.doc";
 import { userRoutes } from "./users/infra/user.routes";
 
