@@ -1,20 +1,33 @@
+import { HashProvider } from "@/infra/http/cryptography/hash.provider";
 import { UserEntity } from "../domain/user.entity";
 import { UserRepository } from "../domain/user.repository";
-import { CreateUserInput, CreateUserOutput, FindAllUsersOutput, GetUserOutput, UpdateUserInput } from "./user.dto";
+import {
+  CreateUserInput,
+  CreateUserOutput,
+  FindAllUsersOutput,
+  GetUserOutput,
+  UpdateUserInput,
+} from "./user.dto";
 
 export class UserService {
-  constructor(private readonly repository: UserRepository) {}
+  constructor(
+    private readonly repository: UserRepository,
+    private readonly hashProvider: HashProvider
+  ) {}
 
   async create(input: CreateUserInput): Promise<CreateUserOutput> {
     const userExists = await this.repository.findByEmail(input.email);
+
     if (userExists) {
       throw new Error(`User with email ${input.email} already exists`);
     }
 
+    const hashedPassword = await this.hashProvider.hash(input.password);
+
     const user = UserEntity.create(
       input.name,
       input.email,
-      input.password
+      hashedPassword
     );
 
     await this.repository.create(user);
@@ -70,7 +83,7 @@ export class UserService {
     }
 
     await this.repository.update(user);
-    
+
     return {
       id: user.id,
       name: user.name,
@@ -84,6 +97,6 @@ export class UserService {
       throw new Error(`User ${id} not found`);
     }
 
-    return await this.repository.delete(id);
+    await this.repository.delete(id);
   }
 }

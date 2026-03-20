@@ -1,4 +1,5 @@
 import { prisma } from "@/infra/database/prisma.client";
+import { ArgonProvider } from "@/infra/http/cryptography/argon.provider";
 import { registry } from "@/infra/http/swagger/swagger.registry";
 import { Router } from "express";
 import {
@@ -101,7 +102,8 @@ export const userRoutes = () => {
   const router = Router();
 
   const repository = new UserRepositoryPrisma(prisma);
-  const service = new UserService(repository);
+  const hashProvider = new ArgonProvider();
+  const service = new UserService(repository, hashProvider);
   const controller = new UserController(service);
 
   router.post("/", controller.create.bind(controller));
