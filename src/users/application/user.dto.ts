@@ -13,14 +13,10 @@ export type UserOutput = {
 };
 
 export type CreateUserOutput = UserOutput;
+export type UpdateUserOutput = UserOutput;
 
 export type GetUserOutput = UserOutput;
 
 export type FindAllUsersOutput = {
   users: UserOutput[];
-};
-
-export type UpdateUserOutput = {
-  id: string;
-  name: string;
 };

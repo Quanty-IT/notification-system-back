@@ -20,11 +20,15 @@ export const createUserSchema = z.object({
 });
 
 export const updateUserSchema = z.object({
-  id: z.uuid("Uuid inválido"),
   name: z
     .string()
     .min(3, "Nome deve ter no mínimo 3 caracteres")
     .max(255, "Nome deve ter no máximo 255 caracteres")
+    .optional(),
+  
+  email: z
+    .email("E-mail inválido")
+    .max(255, "E-mail deve ter no máximo 255 caracteres")
     .optional(),
 });
 

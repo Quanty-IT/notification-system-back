@@ -53,4 +53,9 @@ export class UserEntity {
     this.props.name = name;
     this.props.updatedAt = new Date();
   }
+
+  public updateEmail(email: string) {
+    this.props.email = email;
+    this.props.updatedAt = new Date();
+  }
 }

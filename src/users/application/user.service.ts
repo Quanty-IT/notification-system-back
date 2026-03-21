@@ -7,6 +7,7 @@ import {
   FindAllUsersOutput,
   GetUserOutput,
   UpdateUserInput,
+  UpdateUserOutput,
 } from "./user.dto";
 
 export class UserService {
@@ -71,15 +72,25 @@ export class UserService {
     };
   }
 
-  async update(input: UpdateUserInput): Promise<UpdateUserInput> {
-    const user = await this.repository.findById(input.id);
+  async update(id: string, input: UpdateUserInput): Promise<UpdateUserOutput> {
+    const user = await this.repository.findById(id);
 
     if (!user) {
-      throw new Error(`User ${input.id} not found`);
+      throw new Error(`User ${id} not found`);
     }
 
     if (input.name) {
       user.updateName(input.name);
+    }
+
+    if (input.email && input.email !== user.email) {
+      const userWithSameEmail = await this.repository.findByEmail(input.email);
+
+      if (userWithSameEmail) {
+        throw new Error(`User with email ${input.email} already exists`);
+      }
+      
+      user.updateEmail(input.email);
     }
 
     await this.repository.update(user);
@@ -87,6 +98,9 @@ export class UserService {
     return {
       id: user.id,
       name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 

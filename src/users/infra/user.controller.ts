@@ -39,12 +39,14 @@ export class UserController {
     request: Request<{ id: string }>,
     response: Response
   ) {
+    const { id } = userIdSchema.parse(request.params);
     const input = updateUserSchema.parse({
       id: request.params.id,
       name: request.body.name,
+      email: request.body.email,
     });
 
-    const output = await this.service.update(input);
+    const output = await this.service.update(id, input);
 
     return response.status(200).json(output);
   }
