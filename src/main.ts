@@ -2,10 +2,10 @@ import "dotenv/config";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
 
-import { authRoutes } from "./auth/infra/auth.routes";
-import { errorHandler } from "./infra/http/middlewares/error-handler";
-import { swaggerDoc } from "./infra/http/swagger/swagger.doc";
-import { userRoutes } from "./users/infra/user.routes";
+import { errorHandler } from "./infra/middlewares/error-handler";
+import { swaggerDoc } from "./infra/swagger/swagger.doc";
+import { authRoutes } from "./modules/auth/infra/auth.routes";
+import { userRoutes } from "./modules/users/infra/user.routes";
 
 const app = express();
 app.use(express.json());

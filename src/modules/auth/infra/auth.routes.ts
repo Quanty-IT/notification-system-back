@@ -1,8 +1,8 @@
 import { env } from "@/config/env";
+import { ArgonProvider } from "@/infra/cryptography/argon.provider";
 import { prisma } from "@/infra/database/prisma.client";
-import { registry } from "@/infra/http//swagger/swagger.registry";
-import { ArgonProvider } from "@/infra/http/cryptography/argon.provider";
-import { UserRepositoryPrisma } from "@/users/infra/user.repository.prisma";
+import { registry } from "@/infra/swagger/swagger.registry";
+import { UserRepositoryPrisma } from "@/modules/users/infra/user.repository.prisma";
 import { Router } from "express";
 import { authSchema } from "../application/auth.schemas";
 import { AuthService } from "../application/auth.service";

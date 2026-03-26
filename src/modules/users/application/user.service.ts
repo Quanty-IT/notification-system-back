@@ -1,4 +1,4 @@
-import { HashProvider } from "@/infra/http/cryptography/hash.provider";
+import { HashProvider } from "@/infra/cryptography/hash.provider";
 import { UserEntity } from "../domain/user.entity";
 import { UserRepository } from "../domain/user.repository";
 import {

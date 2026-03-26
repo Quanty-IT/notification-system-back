@@ -1,6 +1,6 @@
+import { ArgonProvider } from "@/infra/cryptography/argon.provider";
 import { prisma } from "@/infra/database/prisma.client";
-import { ArgonProvider } from "@/infra/http/cryptography/argon.provider";
-import { registry } from "@/infra/http/swagger/swagger.registry";
+import { registry } from "@/infra/swagger/swagger.registry";
 import { Router } from "express";
 import {
   createUserSchema,

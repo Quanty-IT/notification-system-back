@@ -1,5 +1,5 @@
-import { HashProvider } from "@/infra/http/cryptography/hash.provider";
-import { UserRepository } from "@/users/domain/user.repository";
+import { HashProvider } from "@/infra/cryptography/hash.provider";
+import { UserRepository } from "@/modules/users/domain/user.repository";
 import { JwtProvider } from "../domain/jwt.provider";
 import { AuthInput, AuthOutput } from "./auth.dto";
 
