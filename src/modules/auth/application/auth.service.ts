@@ -1,5 +1,6 @@
 import { HashProvider } from "@/infra/cryptography/hash.provider";
 import { UserRepository } from "@/modules/users/domain/user.repository";
+import createHttpError from "http-errors";
 import { JwtProvider } from "../domain/jwt.provider";
 import { AuthInput, AuthOutput } from "./auth.dto";
 
@@ -14,7 +15,7 @@ export class AuthService {
     const user = await this.repository.findByEmail(email);
 
     if (!user) {
-      throw new Error("Credenciais inválidas");
+      throw createHttpError.Unauthorized("Credenciais inválidas");
     }
 
     const passwordMatches = await this.hashProvider.compare(
@@ -23,7 +24,7 @@ export class AuthService {
     );
 
     if (!passwordMatches) {
-      throw new Error("Credenciais inválidas");
+      throw createHttpError.Unauthorized("Credenciais inválidas");
     }
 
     const accessToken = await this.jwtProvider.sign({

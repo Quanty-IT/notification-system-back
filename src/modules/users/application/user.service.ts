@@ -1,4 +1,5 @@
 import { HashProvider } from "@/infra/cryptography/hash.provider";
+import createHttpError from "http-errors";
 import { UserEntity } from "../domain/user.entity";
 import { UserRepository } from "../domain/user.repository";
 import {
@@ -20,7 +21,7 @@ export class UserService {
     const userExists = await this.repository.findByEmail(input.email);
 
     if (userExists) {
-      throw new Error(`User with email ${input.email} already exists`);
+      throw new createHttpError.Conflict(`User with email ${input.email} already exists`);
     }
 
     const hashedPassword = await this.hashProvider.hash(input.password);
@@ -60,7 +61,7 @@ export class UserService {
     const user = await this.repository.findById(id);
 
     if (!user) {
-      throw new Error(`User ${id} not found`);
+      throw new createHttpError.NotFound(`User ${id} not found`);
     }
 
     return {
@@ -76,7 +77,7 @@ export class UserService {
     const user = await this.repository.findById(id);
 
     if (!user) {
-      throw new Error(`User ${id} not found`);
+      throw new createHttpError.NotFound(`User ${id} not found`);
     }
 
     if (input.name) {
@@ -87,7 +88,7 @@ export class UserService {
       const userWithSameEmail = await this.repository.findByEmail(input.email);
 
       if (userWithSameEmail) {
-        throw new Error(`User with email ${input.email} already exists`);
+        throw new createHttpError.Conflict(`User with email ${input.email} already exists`);
       }
       
       user.updateEmail(input.email);
@@ -108,7 +109,7 @@ export class UserService {
     const user = await this.repository.findById(id);
 
     if (!user) {
-      throw new Error(`User ${id} not found`);
+      throw new createHttpError.NotFound(`User ${id} not found`);
     }
 
     await this.repository.delete(id);
