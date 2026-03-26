@@ -1,3 +1,4 @@
+import { env } from "@/config/env";
 import { prisma } from "@/infra/database/prisma.client";
 import { registry } from "@/infra/http//swagger/swagger.registry";
 import { ArgonProvider } from "@/infra/http/cryptography/argon.provider";
@@ -41,7 +42,7 @@ export const authRoutes = () => {
 
   const repository = new UserRepositoryPrisma(prisma);
   const hashProvider = new ArgonProvider();
-  const jwtProvider = new JsonWebTokenProvider(process.env.JWT_SECRET!, process.env.JWT_EXPIRES_IN!);
+  const jwtProvider = new JsonWebTokenProvider(env.JWT_SECRET_KEY, env.JWT_EXPIRES_IN);
 
   const service = new AuthService(repository, hashProvider, jwtProvider);
   const controller = new AuthController(service);
