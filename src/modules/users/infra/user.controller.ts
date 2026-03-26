@@ -1,14 +1,9 @@
-import { Request, Response } from "express";
-import {
-  createUserSchema,
-  updateUserSchema,
-  userIdSchema,
-} from "../application/user.schemas";
-import { UserService } from "../application/user.service";
+import { Request, Response } from 'express';
+import { createUserSchema, updateUserSchema, userIdSchema } from '../application/user.schemas';
+import { UserService } from '../application/user.service';
 
 export class UserController {
   constructor(private readonly service: UserService) {}
-
 
   public async create(request: Request, response: Response) {
     const input = createUserSchema.parse(request.body);
@@ -18,16 +13,13 @@ export class UserController {
     return response.status(201).json(output);
   }
 
-  public async findAll(request: Request, response: Response) {
+  public async findAll(_request: Request, response: Response) {
     const output = await this.service.findAll();
 
     return response.status(200).json(output);
   }
 
-  public async findById(
-    request: Request<{ id: string }>,
-    response: Response
-  ) {
+  public async findById(request: Request<{ id: string }>, response: Response) {
     const { id } = userIdSchema.parse(request.params);
 
     const output = await this.service.findById(id);
@@ -35,10 +27,7 @@ export class UserController {
     return response.status(200).json(output);
   }
 
-  public async update(
-    request: Request<{ id: string }>,
-    response: Response
-  ) {
+  public async update(request: Request<{ id: string }>, response: Response) {
     const { id } = userIdSchema.parse(request.params);
     const input = updateUserSchema.parse({
       id: request.params.id,
@@ -51,10 +40,7 @@ export class UserController {
     return response.status(200).json(output);
   }
 
-  public async delete(
-    request: Request<{ id: string }>,
-    response: Response
-  ) {
+  public async delete(request: Request<{ id: string }>, response: Response) {
     const { id } = userIdSchema.parse(request.params);
 
     await this.service.delete(id);

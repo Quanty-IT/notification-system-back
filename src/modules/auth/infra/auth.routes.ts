@@ -1,27 +1,27 @@
-import { env } from "@/config/env";
-import { ArgonProvider } from "@/infra/cryptography/argon.provider";
-import { prisma } from "@/infra/database/prisma.client";
-import { registry } from "@/infra/swagger/swagger.registry";
-import { UserRepositoryPrisma } from "@/modules/users/infra/user.repository.prisma";
-import { Router } from "express";
-import { authSchema } from "../application/auth.schemas";
-import { AuthService } from "../application/auth.service";
-import { AuthController } from "./auth.controller";
-import { JsonWebTokenProvider } from "./jsonwebtoken.provider";
+import { Router } from 'express';
+import { env } from '@/config/env';
+import { ArgonProvider } from '@/infra/cryptography/argon.provider';
+import { prisma } from '@/infra/database/prisma.client';
+import { registry } from '@/infra/swagger/swagger.registry';
+import { UserRepositoryPrisma } from '@/modules/users/infra/user.repository.prisma';
+import { authSchema } from '../application/auth.schemas';
+import { AuthService } from '../application/auth.service';
+import { AuthController } from './auth.controller';
+import { JsonWebTokenProvider } from './jsonwebtoken.provider';
 
-const BASE_PATH = "/auth";
-const TAG = "Auth";
+const BASE_PATH = '/auth';
+const TAG = 'Auth';
 
-registry.register("AuthSignIn", authSchema);
+registry.register('AuthSignIn', authSchema);
 
 registry.registerPath({
-  method: "post",
+  method: 'post',
   path: `${BASE_PATH}/sign-in`,
   tags: [TAG],
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: authSchema,
         },
       },
@@ -29,10 +29,10 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: "User authenticated",
+      description: 'User authenticated',
     },
     401: {
-      description: "Invalid credentials",
+      description: 'Invalid credentials',
     },
   },
 });
@@ -47,7 +47,7 @@ export const authRoutes = () => {
   const service = new AuthService(repository, hashProvider, jwtProvider);
   const controller = new AuthController(service);
 
-  router.post("/sign-in", controller.signIn.bind(controller));
+  router.post('/sign-in', controller.signIn.bind(controller));
 
   return router;
 };

@@ -1,31 +1,27 @@
-import { ArgonProvider } from "@/infra/cryptography/argon.provider";
-import { prisma } from "@/infra/database/prisma.client";
-import { registry } from "@/infra/swagger/swagger.registry";
-import { Router } from "express";
-import {
-  createUserSchema,
-  updateUserSchema,
-  userIdSchema,
-} from "../application/user.schemas";
-import { UserService } from "../application/user.service";
-import { UserController } from "./user.controller";
-import { UserRepositoryPrisma } from "./user.repository.prisma";
+import { Router } from 'express';
+import { ArgonProvider } from '@/infra/cryptography/argon.provider';
+import { prisma } from '@/infra/database/prisma.client';
+import { registry } from '@/infra/swagger/swagger.registry';
+import { createUserSchema, updateUserSchema, userIdSchema } from '../application/user.schemas';
+import { UserService } from '../application/user.service';
+import { UserController } from './user.controller';
+import { UserRepositoryPrisma } from './user.repository.prisma';
 
-const BASE_PATH = "/users";
-const TAG = "Users";
+const BASE_PATH = '/users';
+const TAG = 'Users';
 
-registry.register("CreateUser", createUserSchema);
-registry.register("UpdateUser", updateUserSchema);
-registry.register("UserId", userIdSchema);
+registry.register('CreateUser', createUserSchema);
+registry.register('UpdateUser', updateUserSchema);
+registry.register('UserId', userIdSchema);
 
 registry.registerPath({
-  method: "post",
+  method: 'post',
   path: BASE_PATH,
   tags: [TAG],
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: createUserSchema,
         },
       },
@@ -33,24 +29,24 @@ registry.registerPath({
   },
   responses: {
     201: {
-      description: "User created",
+      description: 'User created',
     },
   },
 });
 
 registry.registerPath({
-  method: "get",
+  method: 'get',
   path: BASE_PATH,
   tags: [TAG],
   responses: {
     200: {
-      description: "List users",
+      description: 'List users',
     },
   },
 });
 
 registry.registerPath({
-  method: "get",
+  method: 'get',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
   request: {
@@ -58,20 +54,20 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: "User found",
+      description: 'User found',
     },
   },
 });
 
 registry.registerPath({
-  method: "patch",
+  method: 'patch',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
   request: {
     params: userIdSchema,
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: updateUserSchema,
         },
       },
@@ -79,13 +75,13 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: "User updated",
+      description: 'User updated',
     },
   },
 });
 
 registry.registerPath({
-  method: "delete",
+  method: 'delete',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
   request: {
@@ -93,7 +89,7 @@ registry.registerPath({
   },
   responses: {
     204: {
-      description: "User deleted",
+      description: 'User deleted',
     },
   },
 });
@@ -106,11 +102,11 @@ export const userRoutes = () => {
   const service = new UserService(repository, hashProvider);
   const controller = new UserController(service);
 
-  router.post("/", controller.create.bind(controller));
-  router.get("/", controller.findAll.bind(controller));
-  router.get("/:id", controller.findById.bind(controller));
-  router.patch("/:id", controller.update.bind(controller));
-  router.delete("/:id", controller.delete.bind(controller));
+  router.post('/', controller.create.bind(controller));
+  router.get('/', controller.findAll.bind(controller));
+  router.get('/:id', controller.findById.bind(controller));
+  router.patch('/:id', controller.update.bind(controller));
+  router.delete('/:id', controller.delete.bind(controller));
 
   return router;
 };

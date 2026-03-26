@@ -1,5 +1,5 @@
-import argon2 from "argon2";
-import { HashProvider } from "./hash.provider";
+import argon2 from 'argon2';
+import { HashProvider } from './hash.provider';
 
 export class ArgonProvider implements HashProvider {
   async hash(value: string): Promise<string> {

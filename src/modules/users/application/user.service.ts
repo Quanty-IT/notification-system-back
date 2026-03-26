@@ -1,7 +1,7 @@
-import { HashProvider } from "@/infra/cryptography/hash.provider";
-import createHttpError from "http-errors";
-import { UserEntity } from "../domain/user.entity";
-import { UserRepository } from "../domain/user.repository";
+import createHttpError from 'http-errors';
+import { HashProvider } from '@/infra/cryptography/hash.provider';
+import { UserEntity } from '../domain/user.entity';
+import { UserRepository } from '../domain/user.repository';
 import {
   CreateUserInput,
   CreateUserOutput,
@@ -9,12 +9,12 @@ import {
   GetUserOutput,
   UpdateUserInput,
   UpdateUserOutput,
-} from "./user.dto";
+} from './user.dto';
 
 export class UserService {
   constructor(
     private readonly repository: UserRepository,
-    private readonly hashProvider: HashProvider
+    private readonly hashProvider: HashProvider,
   ) {}
 
   async create(input: CreateUserInput): Promise<CreateUserOutput> {
@@ -26,11 +26,7 @@ export class UserService {
 
     const hashedPassword = await this.hashProvider.hash(input.password);
 
-    const user = UserEntity.create(
-      input.name,
-      input.email,
-      hashedPassword
-    );
+    const user = UserEntity.create(input.name, input.email, hashedPassword);
 
     await this.repository.create(user);
 
@@ -90,7 +86,7 @@ export class UserService {
       if (userWithSameEmail) {
         throw new createHttpError.Conflict(`User with email ${input.email} already exists`);
       }
-      
+
       user.updateEmail(input.email);
     }
 

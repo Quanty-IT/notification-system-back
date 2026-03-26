@@ -1,10 +1,10 @@
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 
 extendZodWithOpenApi(z);
 
 export const authSchema = z.object({
-  email: z.email("E-mail inválido"),
+  email: z.email('E-mail inválido'),
   password: z.string(),
 });
 

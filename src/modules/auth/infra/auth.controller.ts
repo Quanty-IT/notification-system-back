@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
-import { authSchema } from "../application/auth.schemas";
-import { AuthService } from "../application/auth.service";
+import { Request, Response } from 'express';
+import { authSchema } from '../application/auth.schemas';
+import { AuthService } from '../application/auth.service';
 
 export class AuthController {
   constructor(private readonly service: AuthService) {}

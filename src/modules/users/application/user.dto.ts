@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { createUserSchema, updateUserSchema } from "./user.schemas";
+import { z } from 'zod';
+import { createUserSchema, updateUserSchema } from './user.schemas';
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
