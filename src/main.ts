@@ -6,10 +6,12 @@ import { errorHandler } from './infra/middlewares/error-handler';
 import { swaggerDoc } from './infra/swagger/swagger.doc';
 import { authRoutes } from './modules/auth/infra/auth.routes';
 import { userRoutes } from './modules/users/infra/user.routes';
+import { templateRouter } from './modules/templates/infra/template.routes'; // Import the template router
 
 const app = express();
 app.use(express.json());
 
+app.use('/templates', templateRouter); // Use the template router
 app.use('/users', userRoutes());
 app.use('/auth', authRoutes());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
