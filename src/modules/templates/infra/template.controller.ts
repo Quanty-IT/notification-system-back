@@ -1,71 +1,63 @@
 import { Request, Response } from 'express';
+import {
+  createTemplateSchema,
+  templateIdSchema,
+  templateNameSchema,
+  updateTemplateSchema,
+} from '../application/template.schemas';
 import { TemplateService } from '../application/template.service';
 
 export class TemplateController {
-    constructor(private readonly templateService: TemplateService) { }
+  constructor(private readonly service: TemplateService) {}
 
-    async create(req: Request, res: Response): Promise<Response> {
-        try {
-            const template = await this.templateService.create(req.body);
-            return res.status(201).json(template);
-        } catch (error: any) {
-            return res.status(400).json({ message: error.message });
-        }
-    }
+  public async create(request: Request, response: Response) {
+    const input = createTemplateSchema.parse(request.body);
 
-    async findAll(req: Request, res: Response): Promise<Response> {
-        const templates = await this.templateService.listAll();
-        return res.status(200).json(templates);
-    }
+    const output = await this.service.create(input);
 
+    return response.status(201).json(output);
+  }
 
-    private getId(req: Request): string {
-        const { id } = req.params;
-        return String(id);
-    }
+  public async findAll(_request: Request, response: Response) {
+    const output = await this.service.findAll();
 
-    async findById(req: Request, res: Response): Promise<Response> {
-        try {
-            const template = await this.templateService.findById(this.getId(req));
-            return res.status(200).json(template);
-        } catch (error: any) {
-            return res.status(400).json({ message: error.message });
-        }
-    }
+    return response.status(200).json(output);
+  }
 
-    async update(req: Request, res: Response): Promise<Response> {
-        try {
-            const template = await this.templateService.update(this.getId(req), req.body);
-            return res.status(200).json(template);
-        } catch (error: any) {
-            return res.status(400).json({ message: error.message });
-        }
-    }
+  public async findById(request: Request<{ id: string }>, response: Response) {
+    const { id } = templateIdSchema.parse(request.params);
 
-    async delete(req: Request, res: Response): Promise<Response> {
-        try {
-            await this.templateService.delete(this.getId(req));
-            return res.status(204).send();
-        } catch (error: any) {
-            return res.status(400).json({ message: error.message });
-        }
-    }
+    const output = await this.service.findById(id);
 
-    async activate(req: Request, res: Response): Promise<Response> {
-        try {
-            const template = await this.templateService.activate(this.getId(req));
-            return res.status(200).json(template);
-        } catch (error: any) {
-            return res.status(400).json({ message: error.message });
-        }
-    }
+    return response.status(200).json(output);
+  }
 
-    async deactivate(req: Request, res: Response): Promise<Response> {
-        try {
-            const template = await this.templateService.deactivate(this.getId(req));
-            return res.status(200).json(template);
-        } catch (error: any) {
-            return res.status(400).json({ message: error.message });
-        }
-    }
+  public async findByName(request: Request<{ name: string }>, response: Response) {
+    const { name } = templateNameSchema.parse(request.params);
+
+    const output = await this.service.findByName(name);
+
+    return response.status(200).json(output);
+  }
+
+  public async update(request: Request<{ id: string }>, response: Response) {
+    const { id } = templateIdSchema.parse(request.params);
+    const input = updateTemplateSchema.parse({
+      name: request.body.name,
+      description: request.body.description,
+      isActive: request.body.isActive,
+    });
+
+    const output = await this.service.update(id, input);
+
+    return response.status(200).json(output);
+  }
+
+  public async delete(request: Request<{ id: string }>, response: Response) {
+    const { id } = templateIdSchema.parse(request.params);
+
+    await this.service.delete(id);
+
+    return response.status(204).send();
+  }
 }

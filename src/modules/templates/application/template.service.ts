@@ -1,49 +1,141 @@
-import { ITemplateRepository } from '../domain/template.repository';
-import { CreateTemplateDTO, UpdateTemplateDTO } from '../domain/template.dto';
-import { Template } from '@prisma/client';
+import createHttpError from 'http-errors';
+import { TemplateEntity } from '../domain/template.entity';
+import { TemplateRepository } from '../domain/template.repository';
+import {
+  CreateTemplateInput,
+  CreateTemplateOutput,
+  FindAllTemplatesOutput,
+  GetTemplateByNameOutput,
+  GetTemplateOutput,
+  UpdateTemplateInput,
+  UpdateTemplateOutput,
+} from './template.dto';
 
 export class TemplateService {
-    constructor(private readonly templateRepository: ITemplateRepository) { }
+  constructor(private readonly repository: TemplateRepository) {}
 
-    async create(data: CreateTemplateDTO): Promise<Template> {
-        const normalizedName = data.name.toLowerCase().trim();
-        if (await this.templateRepository.findByName(normalizedName)) {
-            throw new Error('A template with this name already exists.');
-        }
-        return this.templateRepository.create({ ...data, name: normalizedName });
+  async create(input: CreateTemplateInput): Promise<CreateTemplateOutput> {
+    const normalizedName = input.name.toLowerCase();
+
+    const templateExists = await this.repository.findByName(normalizedName);
+
+    if (templateExists) {
+      throw new createHttpError.Conflict(`Template with name ${input.name} already exists`);
     }
 
-    async update(id: string, data: UpdateTemplateDTO): Promise<Template> {
-        await this.findById(id);
+    const template = TemplateEntity.create(normalizedName, input?.description);
 
-        if (data.name) {
-            data.name = data.name.toLowerCase().trim();
-        }
-        return await this.templateRepository.update(id, data);
+    await this.repository.create(template);
+
+    return {
+      id: template.id,
+      name: template.name,
+      description: template.description,
+      isActive: template.isActive,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<FindAllTemplatesOutput> {
+    const templates = await this.repository.findAll();
+
+    return {
+      templates: templates.map((template) => ({
+        id: template.id,
+        name: template.name,
+        description: template.description,
+        isActive: template.isActive,
+        createdAt: template.createdAt,
+        updatedAt: template.updatedAt,
+      })),
+    };
+  }
+
+  async findById(id: string): Promise<GetTemplateOutput> {
+    const template = await this.repository.findById(id);
+
+    if (!template) {
+      throw new createHttpError.NotFound(`Template ${id} not found`);
     }
 
-    async delete(id: string): Promise<void> {
-        await this.findById(id);
-        await this.templateRepository.delete(id);
+    return {
+      id: template.id,
+      name: template.name,
+      description: template.description,
+      isActive: template.isActive,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+    };
+  }
+
+  async findByName(name: string): Promise<GetTemplateByNameOutput> {
+    const normalizedName = name.toLowerCase();
+
+    const template = await this.repository.findByName(normalizedName);
+
+    if (!template) {
+      throw new createHttpError.NotFound(`Template with name ${name} not found`);
     }
 
-    async activate(id: string): Promise<Template> {
-        await this.findById(id);
-        return await this.templateRepository.update(id, { is_active: true });
+    return {
+      id: template.id,
+      name: template.name,
+      description: template.description,
+      isActive: template.isActive,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+    };
+  }
+
+  async update(id: string, input: UpdateTemplateInput): Promise<UpdateTemplateOutput> {
+    const template = await this.repository.findById(id);
+
+    if (!template) {
+      throw new createHttpError.NotFound(`Template ${id} not found`);
     }
 
-    async deactivate(id: string): Promise<Template> {
-        await this.findById(id);
-        return await this.templateRepository.update(id, { is_active: false });
+    if (input.name && input.name.toLowerCase() !== template.name) {
+      const normalizedName = input.name.toLowerCase();
+
+      const templateWithSameName = await this.repository.findByName(normalizedName);
+
+      if (templateWithSameName) {
+        throw new createHttpError.Conflict(`Template with name ${input.name} already exists`);
+      }
+
+      template.updateName(normalizedName);
     }
 
-    async findById(id: string): Promise<Template> {
-        const template = await this.templateRepository.findById(id);
-        if (!template) throw new Error('Template not found.');
-        return template;
+    if (input.description) {
+      template.updateDescription(input.description);
     }
 
-    async listAll(): Promise<Template[]> {
-        return this.templateRepository.listAll();
+    if (input.isActive) {
+      template.activate();
+    } else {
+      template.deactivate();
     }
+
+    await this.repository.update(template);
+
+    return {
+      id: template.id,
+      name: template.name,
+      description: template.description,
+      isActive: template.isActive,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+    };
+  }
+
+  async delete(id: string): Promise<void> {
+    const template = await this.repository.findById(id);
+
+    if (!template) {
+      throw new createHttpError.NotFound(`Template ${id} not found`);
+    }
+
+    await this.repository.delete(id);
+  }
 }

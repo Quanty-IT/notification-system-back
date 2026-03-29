@@ -1,8 +1,8 @@
 -- CreateTable
 CREATE TABLE "templates" (
     "id" TEXT NOT NULL,
-    "name" VARCHAR(120) NOT NULL,
-    "description" VARCHAR(255),
+    "name" TEXT NOT NULL,
+    "description" TEXT,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,

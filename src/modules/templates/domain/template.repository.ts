@@ -1,11 +1,10 @@
-import { Template } from '@prisma/client';
-import { CreateTemplateDTO, UpdateTemplateDTO } from './template.dto';
+import { TemplateEntity } from './template.entity';
 
-export interface ITemplateRepository {
-    create(data: CreateTemplateDTO): Promise<Template>;
-    findByName(name: string): Promise<Template | null>;
-    findById(id: string): Promise<Template | null>;
-    listAll(): Promise<Template[]>;
-    update(id: string, data: UpdateTemplateDTO): Promise<Template>;
-    delete(id: string): Promise<Template>;
+export interface TemplateRepository {
+  create(template: TemplateEntity): Promise<void>;
+  findAll(): Promise<TemplateEntity[]>;
+  findById(id: string): Promise<TemplateEntity | null>;
+  findByName(name: string): Promise<TemplateEntity | null>;
+  update(template: TemplateEntity): Promise<void>;
+  delete(id: string): Promise<void>;
 }

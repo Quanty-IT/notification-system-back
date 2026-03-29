@@ -1,39 +1,53 @@
-import { PrismaClient, Template } from '@prisma/client';
-import { ITemplateRepository } from '../domain/template.repository';
-import { CreateTemplateDTO, UpdateTemplateDTO } from '../domain/template.dto';
+import { PrismaClient } from '../../../../generated/prisma/client';
+import { TemplateEntity } from '../domain/template.entity';
+import { TemplateRepository } from '../domain/template.repository';
+import { TemplateMapper } from './template.mapper';
 
-export class TemplateRepositoryPrisma implements ITemplateRepository {
+export class TemplateRepositoryPrisma implements TemplateRepository {
+  constructor(private readonly prisma: PrismaClient) {}
 
-    constructor(private readonly prisma: PrismaClient) { }
+  async create(template: TemplateEntity): Promise<void> {
+    await this.prisma.template.create({
+      data: TemplateMapper.toPersistence(template),
+    });
+  }
 
-    async create(data: CreateTemplateDTO): Promise<Template> {
-        return this.prisma.template.create({
-            data: { ...data, is_active: true }
-        });
-    }
+  async findAll(): Promise<TemplateEntity[]> {
+    const templates = await this.prisma.template.findMany();
 
-    async findByName(name: string): Promise<Template | null> {
-        return this.prisma.template.findUnique({ where: { name } });
-    }
+    return templates.map(TemplateMapper.toDomain);
+  }
 
-    async findById(id: string): Promise<Template | null> {
-        return this.prisma.template.findUnique({ where: { id } });
-    }
+  async findById(id: string): Promise<TemplateEntity | null> {
+    const template = await this.prisma.template.findUnique({
+      where: { id },
+    });
 
-    async listAll(): Promise<Template[]> {
-        return this.prisma.template.findMany({
-            orderBy: { created_at: 'desc' }
-        });
-    }
+    if (!template) return null;
 
-    async update(id: string, data: UpdateTemplateDTO): Promise<Template> {
-        return await this.prisma.template.update({
-            where: { id },
-            data
-        });
-    }
+    return TemplateMapper.toDomain(template);
+  }
 
-    async delete(id: string): Promise<Template> {
-        return await this.prisma.template.delete({ where: { id } });
-    }
+  async findByName(name: string): Promise<TemplateEntity | null> {
+    const template = await this.prisma.template.findUnique({
+      where: { name },
+    });
+
+    if (!template) return null;
+
+    return TemplateMapper.toDomain(template);
+  }
+
+  async update(template: TemplateEntity): Promise<void> {
+    await this.prisma.template.update({
+      where: { id: template.id },
+      data: TemplateMapper.toPersistence(template),
+    });
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.template.delete({
+      where: { id },
+    });
+  }
 }
