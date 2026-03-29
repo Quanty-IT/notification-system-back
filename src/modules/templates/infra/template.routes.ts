@@ -1,14 +1,28 @@
 import { Router } from 'express';
+import { prisma } from '../../../infra/database/prisma.client';
+import { TemplateRepositoryPrisma } from './template.repository.prisma';
+import { TemplateService } from '../application/template.service';
 import { TemplateController } from './template.controller';
 
-const templateRouter = Router();
-const templateController = new TemplateController();
 
-// O navegador tenta acessar via GET, então esta rota deve existir:
-templateRouter.get('/', (req, res) => templateController.listAll(req, res));
-templateRouter.post('/', (req, res) => templateController.create(req, res));
-templateRouter.get('/:id', (req, res) => templateController.findById(req, res));
-templateRouter.put('/:id', (req, res) => templateController.update(req, res));
-templateRouter.delete('/:id', (req, res) => templateController.delete(req, res));
+export const templateRoutes = () => {
+    const router = Router();
 
-export { templateRouter };
+
+    const repository = new TemplateRepositoryPrisma(prisma);
+    const service = new TemplateService(repository);
+    const controller = new TemplateController(service);
+
+
+    router.post('/', controller.create.bind(controller));
+    router.get('/', controller.findAll.bind(controller));
+    router.get('/:id', controller.findById.bind(controller));
+    router.patch('/:id', controller.update.bind(controller));
+    router.delete('/:id', controller.delete.bind(controller));
+
+
+    router.patch('/:id/activate', controller.activate.bind(controller));
+    router.patch('/:id/deactivate', controller.deactivate.bind(controller));
+
+    return router;
+};

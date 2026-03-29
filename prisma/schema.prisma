@@ -4,23 +4,14 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  }
-
-model User {
-  id         String   @id @default(uuid())
-  name       String
-  email      String   @unique
-  password   String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  @@map("users")
+  url      = env("DATABASE_URL")
 }
+
 
 model Template {
   id          String   @id @default(uuid())
-  name        String   @unique @db.VarChar(120)
-  description String?  @db.VarChar(255)
+  name        String   @unique
+  description String?
   is_active   Boolean  @default(true)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt

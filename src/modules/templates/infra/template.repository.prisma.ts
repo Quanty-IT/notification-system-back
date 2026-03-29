@@ -1,56 +1,39 @@
 import { PrismaClient, Template } from '@prisma/client';
-import {
-    ITemplateRepository,
-    CreateTemplateDTO,
-    UpdateTemplateDTO,
-} from '../domain/template.repository';
-
-
-const prisma = new PrismaClient();
+import { ITemplateRepository } from '../domain/template.repository';
+import { CreateTemplateDTO, UpdateTemplateDTO } from '../domain/template.dto';
 
 export class TemplateRepositoryPrisma implements ITemplateRepository {
+
+    constructor(private readonly prisma: PrismaClient) { }
+
     async create(data: CreateTemplateDTO): Promise<Template> {
-        return prisma.template.create({
-            data: {
-                name: data.name,
-                description: data.description,
-                is_active: true
-            }
+        return this.prisma.template.create({
+            data: { ...data, is_active: true }
         });
     }
 
     async findByName(name: string): Promise<Template | null> {
-        return prisma.template.findUnique({ where: { name } });
+        return this.prisma.template.findUnique({ where: { name } });
     }
 
     async findById(id: string): Promise<Template | null> {
-        return prisma.template.findUnique({ where: { id } });
+        return this.prisma.template.findUnique({ where: { id } });
     }
 
     async listAll(): Promise<Template[]> {
-        return prisma.template.findMany({
-            where: { is_active: true },
+        return this.prisma.template.findMany({
             orderBy: { created_at: 'desc' }
         });
     }
 
-    async update(id: string, data: UpdateTemplateDTO): Promise<Template | null> {
-        try {
-            return await prisma.template.update({
-                where: { id },
-                data: {
-                    name: data.name,
-                    description: data.description,
-                    is_active: data.is_active,
-                },
-            });
-        } catch (error) {
-            return null;
-        }
+    async update(id: string, data: UpdateTemplateDTO): Promise<Template> {
+        return await this.prisma.template.update({
+            where: { id },
+            data
+        });
     }
 
-    async delete(id: string): Promise<Template | null> {
-
-        return this.update(id, { is_active: false }); // Soft delete
+    async delete(id: string): Promise<Template> {
+        return await this.prisma.template.delete({ where: { id } });
     }
 }

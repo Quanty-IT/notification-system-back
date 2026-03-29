@@ -1,10 +1,10 @@
-import { PrismaClient } from '../../../../generated/prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { UserEntity } from '../domain/user.entity';
 import { UserRepository } from '../domain/user.repository';
 import { UserMapper } from './user.mapper';
 
 export class UserRepositoryPrisma implements UserRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) { }
 
   async create(user: UserEntity): Promise<void> {
     await this.prisma.user.create({
