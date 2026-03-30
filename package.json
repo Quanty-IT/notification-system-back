@@ -7,7 +7,8 @@
     "format": "biome check --write .",
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
-    "start": "node dist/src/main.js"
+    "start": "node dist/src/main.js",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +33,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.5.0",
     "@types/swagger-ui-express": "^4.1.8",
+    "husky": "^9.1.7",
     "prisma": "^7.5.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
