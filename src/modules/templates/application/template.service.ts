@@ -5,7 +5,6 @@ import {
   CreateTemplateInput,
   CreateTemplateOutput,
   FindAllTemplatesOutput,
-  GetTemplateByNameOutput,
   GetTemplateOutput,
   UpdateTemplateInput,
   UpdateTemplateOutput,
@@ -69,25 +68,6 @@ export class TemplateService {
     };
   }
 
-  async findByName(name: string): Promise<GetTemplateByNameOutput> {
-    const normalizedName = name.toLowerCase();
-
-    const template = await this.repository.findByName(normalizedName);
-
-    if (!template) {
-      throw new createHttpError.NotFound(`Template with name ${name} not found`);
-    }
-
-    return {
-      id: template.id,
-      name: template.name,
-      description: template.description,
-      isActive: template.isActive,
-      createdAt: template.createdAt,
-      updatedAt: template.updatedAt,
-    };
-  }
-
   async update(id: string, input: UpdateTemplateInput): Promise<UpdateTemplateOutput> {
     const template = await this.repository.findById(id);
 
@@ -107,15 +87,51 @@ export class TemplateService {
       template.updateName(normalizedName);
     }
 
-    if (input.description) {
+    if (input.description !== undefined) {
       template.updateDescription(input.description);
     }
 
-    if (input.isActive) {
-      template.activate();
-    } else {
-      template.deactivate();
+    await this.repository.update(template);
+
+    return {
+      id: template.id,
+      name: template.name,
+      description: template.description,
+      isActive: template.isActive,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+    };
+  }
+
+  async activate(id: string): Promise<UpdateTemplateOutput> {
+    const template = await this.repository.findById(id);
+
+    if (!template) {
+      throw new createHttpError.NotFound(`Template ${id} not found`);
     }
+
+    template.activate();
+
+    await this.repository.update(template);
+
+    return {
+      id: template.id,
+      name: template.name,
+      description: template.description,
+      isActive: template.isActive,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+    };
+  }
+
+  async deactivate(id: string): Promise<UpdateTemplateOutput> {
+    const template = await this.repository.findById(id);
+
+    if (!template) {
+      throw new createHttpError.NotFound(`Template ${id} not found`);
+    }
+
+    template.deactivate();
 
     await this.repository.update(template);
 

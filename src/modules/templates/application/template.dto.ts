@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { createTemplateSchema, templateNameSchema, updateTemplateSchema } from './template.schemas';
+import { createTemplateSchema, updateTemplateSchema } from './template.schemas';
 
 export type CreateTemplateInput = z.infer<typeof createTemplateSchema>;
 export type UpdateTemplateInput = z.infer<typeof updateTemplateSchema>;
-export type GetTemplateByNameInput = z.infer<typeof templateNameSchema>;
 
 export type TemplateOutput = {
   id: string;

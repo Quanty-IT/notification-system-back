@@ -17,19 +17,12 @@ export const updateTemplateSchema = z.object({
     .optional(),
 
   description: z.string().max(500, 'Descrição deve ter no máximo 500 caracteres').nullable().optional(),
-
-  isActive: z.boolean().optional(),
 });
 
 export const templateIdSchema = z.object({
   id: z.uuid('Uuid inválido'),
 });
 
-export const templateNameSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres'),
-});
-
 export type CreateTemplateSchemaInput = z.infer<typeof createTemplateSchema>;
 export type UpdateTemplateSchemaInput = z.infer<typeof updateTemplateSchema>;
 export type TemplateIdSchemaInput = z.infer<typeof templateIdSchema>;
-export type TemplateNameSchemaInput = z.infer<typeof templateNameSchema>;
