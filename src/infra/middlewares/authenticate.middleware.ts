@@ -1,9 +1,14 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import createHttpError from 'http-errors';
+import { Environment, env } from '@/config/env';
 import { JwtProvider } from '@/modules/auth/domain/jwt.provider';
 
 export const authenticate = (jwtProvider: JwtProvider): RequestHandler => {
   return async (request: Request, _response: Response, next: NextFunction) => {
+    if (env.NODE_ENV === Environment.DEV) {
+      return next();
+    }
+
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {

@@ -1,15 +1,22 @@
 import { z } from 'zod';
 
+export enum Environment {
+  DEV = 'development',
+  PRD = 'production',
+}
+
+const environments = Object.values(Environment) as [string, ...string[]];
 const envSchema = z.object({
   // Environment
+  NODE_ENV: z.enum(environments).default(Environment.DEV),
   PORT: z.coerce.number().default(3000),
 
   // Database
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL é obrigatório'),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
   // JWT
-  JWT_SECRET_KEY: z.string().min(1, 'JWT_SECRET_KEY é obrigatório'),
-  JWT_EXPIRES_IN: z.string().min(1, 'JWT_EXPIRES_IN é obrigatório'),
+  JWT_SECRET_KEY: z.string().min(1, 'JWT_SECRET_KEY is required'),
+  JWT_EXPIRES_IN: z.string().min(1, 'JWT_EXPIRES_IN is required'),
 });
 
 const result = envSchema.safeParse(process.env);

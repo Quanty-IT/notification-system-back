@@ -3,8 +3,7 @@ import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 
 import { env } from './config/env';
-import { authenticate } from './infra/middlewares/authenticate.middleware';
-import { errorHandler } from './infra/middlewares/error-handler';
+import { authenticate, errorHandler } from './infra/middlewares';
 import { swaggerDoc } from './infra/swagger/swagger.doc';
 import { authRoutes } from './modules/auth/infra/auth.routes';
 import { JsonWebTokenProvider } from './modules/auth/infra/jsonwebtoken.provider';
