@@ -1,13 +1,12 @@
 import { Router } from 'express';
-import { env } from '@/config/env';
 import { ArgonProvider } from '@/infra/cryptography/argon.provider';
 import { prisma } from '@/infra/database/prisma.client';
 import { registry } from '@/infra/swagger/swagger.registry';
 import { UserRepositoryPrisma } from '@/modules/users/infra/user.repository.prisma';
 import { authSchema } from '../application/auth.schemas';
 import { AuthService } from '../application/auth.service';
+import { JwtProvider } from '../domain/jwt.provider';
 import { AuthController } from './auth.controller';
-import { JsonWebTokenProvider } from './jsonwebtoken.provider';
 
 const BASE_PATH = '/auth';
 const TAG = 'Auth';
@@ -37,12 +36,11 @@ registry.registerPath({
   },
 });
 
-export const authRoutes = () => {
+export const authRoutes = (jwtProvider: JwtProvider) => {
   const router = Router();
 
   const repository = new UserRepositoryPrisma(prisma);
   const hashProvider = new ArgonProvider();
-  const jwtProvider = new JsonWebTokenProvider(env.JWT_SECRET_KEY, env.JWT_EXPIRES_IN);
 
   const service = new AuthService(repository, hashProvider, jwtProvider);
   const controller = new AuthController(service);

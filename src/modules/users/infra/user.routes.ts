@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ArgonProvider } from '@/infra/cryptography/argon.provider';
 import { prisma } from '@/infra/database/prisma.client';
-import { registry } from '@/infra/swagger/swagger.registry';
+import { bearerAuth, registry } from '@/infra/swagger/swagger.registry';
 import { createUserSchema, updateUserSchema, userIdSchema } from '../application/user.schemas';
 import { UserService } from '../application/user.service';
 import { UserController } from './user.controller';
@@ -18,6 +18,7 @@ registry.registerPath({
   method: 'post',
   path: BASE_PATH,
   tags: [TAG],
+  security: [{ [bearerAuth.name]: [] }],
   request: {
     body: {
       content: {
@@ -38,6 +39,7 @@ registry.registerPath({
   method: 'get',
   path: BASE_PATH,
   tags: [TAG],
+  security: [{ [bearerAuth.name]: [] }],
   responses: {
     200: {
       description: 'List users',
@@ -49,6 +51,7 @@ registry.registerPath({
   method: 'get',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
+  security: [{ [bearerAuth.name]: [] }],
   request: {
     params: userIdSchema,
   },
@@ -63,6 +66,7 @@ registry.registerPath({
   method: 'patch',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
+  security: [{ [bearerAuth.name]: [] }],
   request: {
     params: userIdSchema,
     body: {
@@ -84,6 +88,7 @@ registry.registerPath({
   method: 'delete',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
+  security: [{ [bearerAuth.name]: [] }],
   request: {
     params: userIdSchema,
   },
