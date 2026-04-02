@@ -1,3 +1,4 @@
+import cors from 'cors';
 import 'dotenv/config';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
@@ -11,6 +12,13 @@ import { templateRoutes } from './modules/templates/infra/template.routes';
 import { userRoutes } from './modules/users/infra/user.routes';
 
 const app = express();
+const corsOptions = {
+  origin: '*',
+  methods: 'GET,POST,PUT,PATCH,DELETE',
+  allowedHeaders: 'Content-Type,Authorization',
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const jwtProvider = new JsonWebTokenProvider(
