@@ -8,4 +8,9 @@ export const authSchema = z.object({
   password: z.string(),
 });
 
+export const refreshTokenSchema = z.object({
+  refreshToken: z.string(),
+});
+
 export type AuthSchemaInput = z.infer<typeof authSchema>;
+export type RefreshTokenSchemaInput = z.infer<typeof refreshTokenSchema>;
