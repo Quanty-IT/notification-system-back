@@ -45,16 +45,16 @@ export class AuthService {
     try {
       payload = await this.jwtProvider.verify(refreshToken);
     } catch (_error) {
-      throw createHttpError.Unauthorized('Token de atualização inválido ou expirado');
+      throw createHttpError.Unauthorized('Invalid or expired refresh token');
     }
 
     if (payload.type !== 'refresh') {
-      throw createHttpError.Unauthorized('Tipo de token inválido');
+      throw createHttpError.Unauthorized('Invalid token type');
     }
 
     const user = await this.repository.findById(payload.sub);
     if (!user) {
-      throw createHttpError.Unauthorized('Token de atualização inválido');
+      throw createHttpError.Unauthorized('Invalid refresh token');
     }
 
     const newAccessToken = await this.jwtProvider.sign({

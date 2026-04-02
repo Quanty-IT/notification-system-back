@@ -4,7 +4,7 @@ import { z } from 'zod';
 extendZodWithOpenApi(z);
 
 export const authSchema = z.object({
-  email: z.email('E-mail inválido'),
+  email: z.email('Invalid email'),
   password: z.string(),
 });
 

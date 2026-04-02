@@ -4,23 +4,23 @@ import { z } from 'zod';
 extendZodWithOpenApi(z);
 
 export const createTemplateSchema = z.object({
-  name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(255, 'Nome deve ter no máximo 255 caracteres'),
+  name: z.string().min(3, 'Name must have at least 3 characters').max(255, 'Name must have at most 255 characters'),
 
-  description: z.string().max(1000, 'Descrição deve ter no máximo 1000 caracteres').nullable().optional(),
+  description: z.string().max(1000, 'Description must have at most 1000 characters').nullable().optional(),
 });
 
 export const updateTemplateSchema = z.object({
   name: z
     .string()
-    .min(3, 'Nome deve ter no mínimo 3 caracteres')
-    .max(255, 'Nome deve ter no máximo 255 caracteres')
+    .min(3, 'Name must have at least 3 characters')
+    .max(255, 'Name must have at most 255 characters')
     .optional(),
 
-  description: z.string().max(500, 'Descrição deve ter no máximo 500 caracteres').nullable().optional(),
+  description: z.string().max(500, 'Description must have at most 500 characters').nullable().optional(),
 });
 
 export const templateIdSchema = z.object({
-  id: z.uuid('Uuid inválido'),
+  id: z.uuid('Invalid UUID'),
 });
 
 export type CreateTemplateSchemaInput = z.infer<typeof createTemplateSchema>;

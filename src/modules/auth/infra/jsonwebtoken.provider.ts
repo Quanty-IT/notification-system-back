@@ -19,7 +19,7 @@ export class JsonWebTokenProvider implements JwtProvider {
     const decoded = jwt.verify(token, this.secret) as jwt.JwtPayload;
 
     if (!decoded.sub || !decoded.email || !decoded.type) {
-      throw new Error('Token inválido');
+      throw new Error('Invalid token');
     }
 
     return {

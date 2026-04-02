@@ -4,28 +4,28 @@ import { z } from 'zod';
 extendZodWithOpenApi(z);
 
 export const createUserSchema = z.object({
-  name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(255, 'Nome deve ter no máximo 255 caracteres'),
+  name: z.string().min(3, 'Name must have at least 3 characters').max(255, 'Name must have at most 255 characters'),
 
-  email: z.email('E-mail inválido').max(255, 'E-mail deve ter no máximo 255 caracteres'),
+  email: z.email('Invalid email').max(255, 'Email must have at most 255 characters'),
 
   password: z
     .string()
-    .min(6, 'Senha deve ter no mínimo 6 caracteres')
-    .max(255, 'Senha deve ter no máximo 255 caracteres'),
+    .min(6, 'Password must have at least 6 characters')
+    .max(255, 'Password must have at most 255 characters'),
 });
 
 export const updateUserSchema = z.object({
   name: z
     .string()
-    .min(3, 'Nome deve ter no mínimo 3 caracteres')
-    .max(255, 'Nome deve ter no máximo 255 caracteres')
+    .min(3, 'Name must have at least 3 characters')
+    .max(255, 'Name must have at most 255 characters')
     .optional(),
 
-  email: z.email('E-mail inválido').max(255, 'E-mail deve ter no máximo 255 caracteres').optional(),
+  email: z.email('Invalid email').max(255, 'Email must have at most 255 characters').optional(),
 });
 
 export const userIdSchema = z.object({
-  id: z.uuid('Uuid inválido'),
+  id: z.uuid('Invalid UUID'),
 });
 
 export type CreateUserSchemaInput = z.infer<typeof createUserSchema>;
