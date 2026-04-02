@@ -1,7 +1,7 @@
 import createHttpError from 'http-errors';
 import { HashProvider } from '@/infra/cryptography/hash.provider';
 import { UserRepository } from '@/modules/users/domain/user.repository';
-import { JwtProvider } from '../domain/jwt.provider';
+import { JwtPayload, JwtProvider } from '../domain/jwt.provider';
 import { AuthInput, AuthOutput } from './auth.dto';
 
 export class AuthService {
@@ -27,8 +27,48 @@ export class AuthService {
     const accessToken = await this.jwtProvider.sign({
       sub: user.id,
       email: user.email,
+      type: 'access',
     });
 
-    return { accessToken };
+    const refreshToken = await this.jwtProvider.sign({
+      sub: user.id,
+      email: user.email,
+      type: 'refresh',
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  async refreshToken(refreshToken: string): Promise<AuthOutput> {
+    let payload: JwtPayload;
+
+    try {
+      payload = await this.jwtProvider.verify(refreshToken);
+    } catch (_error) {
+      throw createHttpError.Unauthorized('Token de atualização inválido ou expirado');
+    }
+
+    if (payload.type !== 'refresh') {
+      throw createHttpError.Unauthorized('Tipo de token inválido');
+    }
+
+    const user = await this.repository.findById(payload.sub);
+    if (!user) {
+      throw createHttpError.Unauthorized('Token de atualização inválido');
+    }
+
+    const newAccessToken = await this.jwtProvider.sign({
+      sub: user.id,
+      email: user.email,
+      type: 'access',
+    });
+
+    const newRefreshToken = await this.jwtProvider.sign({
+      sub: user.id,
+      email: user.email,
+      type: 'refresh',
+    });
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
 }

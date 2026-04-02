@@ -13,7 +13,11 @@ import { userRoutes } from './modules/users/infra/user.routes';
 const app = express();
 app.use(express.json());
 
-const jwtProvider = new JsonWebTokenProvider(env.JWT_SECRET_KEY, env.JWT_EXPIRES_IN);
+const jwtProvider = new JsonWebTokenProvider(
+  env.JWT_SECRET_KEY,
+  env.JWT_ACCESS_TOKEN_EXPIRES_IN,
+  env.JWT_REFRESH_TOKEN_EXPIRES_IN,
+);
 const authMiddleware = authenticate(jwtProvider);
 
 app.use('/auth', authRoutes(jwtProvider));

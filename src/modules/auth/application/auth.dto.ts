@@ -5,4 +5,5 @@ export type AuthInput = z.infer<typeof authSchema>;
 
 export type AuthOutput = {
   accessToken: string;
+  refreshToken: string;
 };
