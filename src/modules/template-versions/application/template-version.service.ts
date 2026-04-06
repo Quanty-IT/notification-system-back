@@ -1,0 +1,143 @@
+import createHttpError from 'http-errors';
+import { TemplateVersionEntity } from '../domain/template-version.entity';
+import { TemplateVersionRepository } from '../domain/template-version.repository';
+import {
+  CreateTemplateVersionInput,
+  CreateTemplateVersionOutput,
+  FindTemplateVersionsByTemplateOutput,
+  GetTemplateVersionOutput,
+  UpdateTemplateVersionInput,
+  UpdateTemplateVersionOutput,
+} from './template-version.dto';
+
+export class TemplateVersionService {
+  constructor(private readonly repository: TemplateVersionRepository) {}
+
+  async create(input: CreateTemplateVersionInput): Promise<CreateTemplateVersionOutput> {
+    const templateExists = await this.repository.templateExists(input.templateId);
+
+    if (!templateExists) {
+      throw new createHttpError.NotFound(`Template ${input.templateId} not found`);
+    }
+
+    const latestVersion = await this.repository.findLatestVersionByTemplateId(input.templateId);
+
+    const templateVersion = TemplateVersionEntity.create(
+      input.templateId,
+      latestVersion + 1,
+      input.subject,
+      input.body,
+      input.bodyType.toLowerCase(),
+      input.variablesSchemaJson,
+    );
+
+    await this.repository.create(templateVersion);
+
+    return this.toOutput(templateVersion);
+  }
+
+  async findAllByTemplateId(templateId: string): Promise<FindTemplateVersionsByTemplateOutput> {
+    const templateExists = await this.repository.templateExists(templateId);
+
+    if (!templateExists) {
+      throw new createHttpError.NotFound(`Template ${templateId} not found`);
+    }
+
+    const templateVersions = await this.repository.findAllByTemplateId(templateId);
+
+    return {
+      templateVersions: templateVersions.map((templateVersion) => this.toOutput(templateVersion)),
+    };
+  }
+
+  async findById(id: string): Promise<GetTemplateVersionOutput> {
+    const templateVersion = await this.repository.findById(id);
+
+    if (!templateVersion) {
+      throw new createHttpError.NotFound(`Template version ${id} not found`);
+    }
+
+    return this.toOutput(templateVersion);
+  }
+
+  async update(id: string, input: UpdateTemplateVersionInput): Promise<UpdateTemplateVersionOutput> {
+    const templateVersion = await this.repository.findById(id);
+
+    if (!templateVersion) {
+      throw new createHttpError.NotFound(`Template version ${id} not found`);
+    }
+
+    if (input.subject !== undefined) {
+      templateVersion.updateSubject(input.subject);
+    }
+
+    if (input.body !== undefined) {
+      templateVersion.updateBody(input.body);
+    }
+
+    if (input.bodyType !== undefined) {
+      templateVersion.updateBodyType(input.bodyType.toLowerCase());
+    }
+
+    if (input.variablesSchemaJson !== undefined) {
+      templateVersion.updateVariablesSchemaJson(input.variablesSchemaJson);
+    }
+
+    await this.repository.update(templateVersion);
+
+    return this.toOutput(templateVersion);
+  }
+
+  async activate(id: string): Promise<UpdateTemplateVersionOutput> {
+    const templateVersion = await this.repository.findById(id);
+
+    if (!templateVersion) {
+      throw new createHttpError.NotFound(`Template version ${id} not found`);
+    }
+
+    templateVersion.activate();
+
+    await this.repository.update(templateVersion);
+
+    return this.toOutput(templateVersion);
+  }
+
+  async deactivate(id: string): Promise<UpdateTemplateVersionOutput> {
+    const templateVersion = await this.repository.findById(id);
+
+    if (!templateVersion) {
+      throw new createHttpError.NotFound(`Template version ${id} not found`);
+    }
+
+    templateVersion.deactivate();
+
+    await this.repository.update(templateVersion);
+
+    return this.toOutput(templateVersion);
+  }
+
+  async delete(id: string): Promise<void> {
+    const templateVersion = await this.repository.findById(id);
+
+    if (!templateVersion) {
+      throw new createHttpError.NotFound(`Template version ${id} not found`);
+    }
+
+    await this.repository.delete(id);
+  }
+
+  private toOutput(templateVersion: TemplateVersionEntity): GetTemplateVersionOutput {
+    return {
+      id: templateVersion.id,
+      templateId: templateVersion.templateId,
+      version: templateVersion.version,
+      subject: templateVersion.subject,
+      body: templateVersion.body,
+      bodyType: templateVersion.bodyType,
+      variablesSchemaJson: templateVersion.variablesSchemaJson,
+      isActive: templateVersion.isActive,
+      createdAt: templateVersion.createdAt,
+      updatedAt: templateVersion.updatedAt,
+    };
+  }
+}
