@@ -25,6 +25,25 @@ model Template {
   is_active   Boolean  @default(true)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
+  versions    TemplateVersion[]
 
   @@map("templates")
+}
+
+model TemplateVersion {
+  id                    String   @id @default(uuid())
+  template_id           String
+  version               Int
+  subject               String   @db.VarChar(255)
+  body                  String
+  body_type             String   @db.VarChar(20)
+  variables_schema_json Json?
+  is_active             Boolean  @default(true)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+  template              Template @relation(fields: [template_id], references: [id], onDelete: Cascade)
+
+  @@unique([template_id, version])
+  @@index([template_id])
+  @@map("template_versions")
 }

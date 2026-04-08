@@ -1,4 +1,5 @@
 import '@/modules/auth/infra/auth.routes';
+import '@/modules/template-versions/infra/template-version.routes';
 import '@/modules/users/infra/user.routes';
 import '@/modules/templates/infra/template.routes';
 

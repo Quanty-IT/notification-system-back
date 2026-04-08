@@ -8,6 +8,7 @@ import { authenticate, errorHandler } from './infra/middlewares';
 import { swaggerDoc } from './infra/swagger/swagger.doc';
 import { authRoutes } from './modules/auth/infra/auth.routes';
 import { JsonWebTokenProvider } from './modules/auth/infra/jsonwebtoken.provider';
+import { templateVersionRoutes } from './modules/template-versions/infra/template-version.routes';
 import { templateRoutes } from './modules/templates/infra/template.routes';
 import { userRoutes } from './modules/users/infra/user.routes';
 
@@ -31,6 +32,7 @@ const authMiddleware = authenticate(jwtProvider);
 app.use('/auth', authRoutes(jwtProvider));
 app.use('/users', authMiddleware, userRoutes());
 app.use('/templates', authMiddleware, templateRoutes());
+app.use('/template-versions', authMiddleware, templateVersionRoutes());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
 app.use(errorHandler);
