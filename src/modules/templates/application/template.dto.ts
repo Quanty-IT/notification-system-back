@@ -16,7 +16,6 @@ export type TemplateOutput = {
 export type CreateTemplateOutput = TemplateOutput;
 export type UpdateTemplateOutput = TemplateOutput;
 export type GetTemplateOutput = TemplateOutput;
-export type GetTemplateByNameOutput = TemplateOutput;
 
 export type FindAllTemplatesOutput = {
   templates: TemplateOutput[];

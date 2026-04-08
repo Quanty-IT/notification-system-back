@@ -1,4 +1,5 @@
 import createHttpError from 'http-errors';
+
 import { TemplateEntity } from '../domain/template.entity';
 import { TemplateRepository } from '../domain/template.repository';
 import {
@@ -6,6 +7,7 @@ import {
   CreateTemplateOutput,
   FindAllTemplatesOutput,
   GetTemplateOutput,
+  TemplateOutput,
   UpdateTemplateInput,
   UpdateTemplateOutput,
 } from './template.dto';
@@ -14,40 +16,24 @@ export class TemplateService {
   constructor(private readonly repository: TemplateRepository) {}
 
   async create(input: CreateTemplateInput): Promise<CreateTemplateOutput> {
-    const normalizedName = input.name.toLowerCase();
-
-    const templateExists = await this.repository.findByName(normalizedName);
+    const templateExists = await this.repository.findByName(input.name);
 
     if (templateExists) {
       throw new createHttpError.Conflict(`Template with name ${input.name} already exists`);
     }
 
-    const template = TemplateEntity.create(normalizedName, input?.description);
+    const template = TemplateEntity.create(input.name, input.description);
 
     await this.repository.create(template);
 
-    return {
-      id: template.id,
-      name: template.name,
-      description: template.description,
-      isActive: template.isActive,
-      createdAt: template.createdAt,
-      updatedAt: template.updatedAt,
-    };
+    return this.toOutput(template);
   }
 
   async findAll(): Promise<FindAllTemplatesOutput> {
     const templates = await this.repository.findAll();
 
     return {
-      templates: templates.map((template) => ({
-        id: template.id,
-        name: template.name,
-        description: template.description,
-        isActive: template.isActive,
-        createdAt: template.createdAt,
-        updatedAt: template.updatedAt,
-      })),
+      templates: templates.map((template) => this.toOutput(template)),
     };
   }
 
@@ -58,14 +44,7 @@ export class TemplateService {
       throw new createHttpError.NotFound(`Template ${id} not found`);
     }
 
-    return {
-      id: template.id,
-      name: template.name,
-      description: template.description,
-      isActive: template.isActive,
-      createdAt: template.createdAt,
-      updatedAt: template.updatedAt,
-    };
+    return this.toOutput(template);
   }
 
   async update(id: string, input: UpdateTemplateInput): Promise<UpdateTemplateOutput> {
@@ -75,16 +54,14 @@ export class TemplateService {
       throw new createHttpError.NotFound(`Template ${id} not found`);
     }
 
-    if (input.name && input.name.toLowerCase() !== template.name) {
-      const normalizedName = input.name.toLowerCase();
-
-      const templateWithSameName = await this.repository.findByName(normalizedName);
+    if (input.name && input.name !== template.name) {
+      const templateWithSameName = await this.repository.findByName(input.name);
 
       if (templateWithSameName) {
         throw new createHttpError.Conflict(`Template with name ${input.name} already exists`);
       }
 
-      template.updateName(normalizedName);
+      template.updateName(input.name);
     }
 
     if (input.description !== undefined) {
@@ -93,14 +70,7 @@ export class TemplateService {
 
     await this.repository.update(template);
 
-    return {
-      id: template.id,
-      name: template.name,
-      description: template.description,
-      isActive: template.isActive,
-      createdAt: template.createdAt,
-      updatedAt: template.updatedAt,
-    };
+    return this.toOutput(template);
   }
 
   async activate(id: string): Promise<UpdateTemplateOutput> {
@@ -114,14 +84,7 @@ export class TemplateService {
 
     await this.repository.update(template);
 
-    return {
-      id: template.id,
-      name: template.name,
-      description: template.description,
-      isActive: template.isActive,
-      createdAt: template.createdAt,
-      updatedAt: template.updatedAt,
-    };
+    return this.toOutput(template);
   }
 
   async deactivate(id: string): Promise<UpdateTemplateOutput> {
@@ -135,14 +98,7 @@ export class TemplateService {
 
     await this.repository.update(template);
 
-    return {
-      id: template.id,
-      name: template.name,
-      description: template.description,
-      isActive: template.isActive,
-      createdAt: template.createdAt,
-      updatedAt: template.updatedAt,
-    };
+    return this.toOutput(template);
   }
 
   async delete(id: string): Promise<void> {
@@ -153,5 +109,16 @@ export class TemplateService {
     }
 
     await this.repository.delete(id);
+  }
+
+  private toOutput(template: TemplateEntity): TemplateOutput {
+    return {
+      id: template.id,
+      name: template.name,
+      description: template.description,
+      isActive: template.isActive,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+    };
   }
 }
