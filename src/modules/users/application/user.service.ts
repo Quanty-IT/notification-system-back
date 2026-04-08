@@ -1,4 +1,5 @@
 import createHttpError from 'http-errors';
+
 import { HashProvider } from '@/infra/cryptography/hash.provider';
 import { UserEntity } from '../domain/user.entity';
 import { UserRepository } from '../domain/user.repository';
@@ -9,6 +10,7 @@ import {
   GetUserOutput,
   UpdateUserInput,
   UpdateUserOutput,
+  UserOutput,
 } from './user.dto';
 
 export class UserService {
@@ -30,26 +32,14 @@ export class UserService {
 
     await this.repository.create(user);
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return this.toOutput(user);
   }
 
   async findAll(): Promise<FindAllUsersOutput> {
     const users = await this.repository.findAll();
 
     return {
-      users: users.map((user) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      })),
+      users: users.map((user) => this.toOutput(user)),
     };
   }
 
@@ -60,13 +50,7 @@ export class UserService {
       throw new createHttpError.NotFound(`User ${id} not found`);
     }
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return this.toOutput(user);
   }
 
   async update(id: string, input: UpdateUserInput): Promise<UpdateUserOutput> {
@@ -92,13 +76,7 @@ export class UserService {
 
     await this.repository.update(user);
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return this.toOutput(user);
   }
 
   async delete(id: string): Promise<void> {
@@ -109,5 +87,15 @@ export class UserService {
     }
 
     await this.repository.delete(id);
+  }
+
+  private toOutput(user: UserEntity): UserOutput {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 }
