@@ -1,7 +1,7 @@
 import '@/modules/auth/infra/auth.routes';
-import '@/modules/template-versions/infra/template-version.routes';
 import '@/modules/users/infra/user.routes';
 import '@/modules/templates/infra/template.routes';
+import '@/modules/template-versions/infra/template-version.routes';
 
 import { OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
 import { registry } from './swagger.registry';

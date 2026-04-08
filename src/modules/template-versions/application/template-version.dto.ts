@@ -10,8 +10,8 @@ export type TemplateVersionOutput = {
   version: number;
   subject: string;
   body: string;
-  bodyType: string;
-  variablesSchemaJson: Record<string, unknown> | null;
+  bodyType: 'text' | 'html';
+  variablesSchemaJson: Record<string, 'string' | 'number' | 'boolean'> | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

@@ -1,4 +1,6 @@
 import createHttpError from 'http-errors';
+
+import { TemplateRepository } from '@/modules/templates/domain/template.repository';
 import { TemplateVersionEntity } from '../domain/template-version.entity';
 import { TemplateVersionRepository } from '../domain/template-version.repository';
 import {
@@ -11,10 +13,13 @@ import {
 } from './template-version.dto';
 
 export class TemplateVersionService {
-  constructor(private readonly repository: TemplateVersionRepository) {}
+  constructor(
+    private readonly repository: TemplateVersionRepository,
+    private readonly templateRepository: TemplateRepository,
+  ) {}
 
   async create(input: CreateTemplateVersionInput): Promise<CreateTemplateVersionOutput> {
-    const templateExists = await this.repository.templateExists(input.templateId);
+    const templateExists = await this.templateRepository.findById(input.templateId);
 
     if (!templateExists) {
       throw new createHttpError.NotFound(`Template ${input.templateId} not found`);
@@ -27,7 +32,7 @@ export class TemplateVersionService {
       latestVersion + 1,
       input.subject,
       input.body,
-      input.bodyType.toLowerCase(),
+      input.bodyType,
       input.variablesSchemaJson,
     );
 
@@ -37,7 +42,7 @@ export class TemplateVersionService {
   }
 
   async findAllByTemplateId(templateId: string): Promise<FindTemplateVersionsByTemplateOutput> {
-    const templateExists = await this.repository.templateExists(templateId);
+    const templateExists = await this.templateRepository.findById(templateId);
 
     if (!templateExists) {
       throw new createHttpError.NotFound(`Template ${templateId} not found`);
@@ -76,7 +81,7 @@ export class TemplateVersionService {
     }
 
     if (input.bodyType !== undefined) {
-      templateVersion.updateBodyType(input.bodyType.toLowerCase());
+      templateVersion.updateBodyType(input.bodyType);
     }
 
     if (input.variablesSchemaJson !== undefined) {

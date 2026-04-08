@@ -1,11 +1,13 @@
+export type TemplateVersionVariableType = 'string' | 'number' | 'boolean';
+
 export type TemplateVersionProps = {
   id: string;
   templateId: string;
   version: number;
   subject: string;
   body: string;
-  bodyType: string;
-  variablesSchemaJson: Record<string, unknown> | null;
+  bodyType: 'text' | 'html';
+  variablesSchemaJson: Record<string, TemplateVersionVariableType> | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -19,8 +21,8 @@ export class TemplateVersionEntity {
     version: number,
     subject: string,
     body: string,
-    bodyType: string,
-    variablesSchemaJson?: Record<string, unknown> | null,
+    bodyType: 'text' | 'html',
+    variablesSchemaJson?: Record<string, TemplateVersionVariableType> | null,
   ) {
     return new TemplateVersionEntity({
       id: crypto.randomUUID(),
@@ -90,12 +92,12 @@ export class TemplateVersionEntity {
     this.props.updatedAt = new Date();
   }
 
-  public updateBodyType(bodyType: string) {
+  public updateBodyType(bodyType: 'text' | 'html') {
     this.props.bodyType = bodyType;
     this.props.updatedAt = new Date();
   }
 
-  public updateVariablesSchemaJson(variablesSchemaJson: Record<string, unknown> | null) {
+  public updateVariablesSchemaJson(variablesSchemaJson: Record<string, TemplateVersionVariableType> | null) {
     this.props.variablesSchemaJson = variablesSchemaJson;
     this.props.updatedAt = new Date();
   }

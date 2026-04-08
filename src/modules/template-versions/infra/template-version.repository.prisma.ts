@@ -41,15 +41,6 @@ export class TemplateVersionRepositoryPrisma implements TemplateVersionRepositor
     return latest?.version ?? 0;
   }
 
-  async templateExists(templateId: string): Promise<boolean> {
-    const template = await this.prisma.template.findUnique({
-      where: { id: templateId },
-      select: { id: true },
-    });
-
-    return !!template;
-  }
-
   async update(templateVersion: TemplateVersionEntity): Promise<void> {
     await this.prisma.templateVersion.update({
       where: { id: templateVersion.id },

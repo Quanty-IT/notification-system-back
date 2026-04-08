@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '@/infra/database/prisma.client';
 import { bearerAuth, registry } from '@/infra/swagger/swagger.registry';
+import { TemplateRepositoryPrisma } from '@/modules/templates/infra/template.repository.prisma';
 import {
   createTemplateVersionSchema,
   templateVersionIdSchema,
@@ -37,10 +38,10 @@ const templateVersionResponseExample = {
   templateId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
   version: 2,
   subject: 'Confirme seu cadastro',
-  body: '<p>Ola {{nome}}, confirme seu cadastro no link abaixo.</p>',
+  body: '<p>Ola {{name}}, confirme seu cadastro no link abaixo.</p>',
   bodyType: 'html',
   variablesSchemaJson: {
-    nome: {
+    name: {
       type: 'string',
       required: true,
     },
@@ -58,10 +59,10 @@ const templateVersionListResponseExample = {
       templateId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
       version: 1,
       subject: 'Bem-vindo ao sistema',
-      body: 'Ola {{nome}}, seu cadastro foi criado com sucesso.',
+      body: 'Ola {{name}}, seu cadastro foi criado com sucesso.',
       bodyType: 'text',
       variablesSchemaJson: {
-        nome: {
+        name: {
           type: 'string',
           required: true,
         },
@@ -93,10 +94,10 @@ registry.registerPath({
           example: {
             templateId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
             subject: 'Confirme seu cadastro',
-            body: '<p>Ola {{nome}}, confirme seu cadastro no link abaixo.</p>',
+            body: '<p>Ola {{name}}, confirme seu cadastro no link abaixo.</p>',
             bodyType: 'html',
             variablesSchemaJson: {
-              nome: {
+              name: {
                 type: 'string',
                 required: true,
               },
@@ -174,10 +175,10 @@ registry.registerPath({
           schema: updateTemplateVersionSchema,
           example: {
             subject: 'Confirme seu cadastro agora',
-            body: '<p>Ola {{nome}}, confirme seu cadastro no botao abaixo.</p>',
+            body: '<p>Ola {{name}}, confirme seu cadastro no botao abaixo.</p>',
             bodyType: 'html',
             variablesSchemaJson: {
-              nome: {
+              name: {
                 type: 'string',
                 required: true,
               },
@@ -267,7 +268,8 @@ export const templateVersionRoutes = () => {
   const router = Router();
 
   const repository = new TemplateVersionRepositoryPrisma(prisma);
-  const service = new TemplateVersionService(repository);
+  const templateRepository = new TemplateRepositoryPrisma(prisma);
+  const service = new TemplateVersionService(repository, templateRepository);
   const controller = new TemplateVersionController(service);
 
   router.post('/', controller.create.bind(controller));

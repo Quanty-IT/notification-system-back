@@ -5,7 +5,6 @@ export interface TemplateVersionRepository {
   findById(id: string): Promise<TemplateVersionEntity | null>;
   findAllByTemplateId(templateId: string): Promise<TemplateVersionEntity[]>;
   findLatestVersionByTemplateId(templateId: string): Promise<number>;
-  templateExists(templateId: string): Promise<boolean>;
   update(templateVersion: TemplateVersionEntity): Promise<void>;
   delete(id: string): Promise<void>;
 }
