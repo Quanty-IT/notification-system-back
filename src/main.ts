@@ -4,7 +4,7 @@ import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 
 import { env } from './config/env';
-import { authenticate, errorHandler } from './infra/middlewares';
+import { apiKeyAuth, bearerAuth, errorHandler } from './infra/middlewares';
 import { swaggerDoc } from './infra/swagger/swagger.doc';
 import { authRoutes } from './modules/auth/infra/auth.routes';
 import { JsonWebTokenProvider } from './modules/auth/infra/jsonwebtoken.provider';
@@ -15,8 +15,8 @@ import { userRoutes } from './modules/users/infra/user.routes';
 const app = express();
 const corsOptions = {
   origin: '*',
-  methods: 'GET,POST,PUT,PATCH,DELETE',
-  allowedHeaders: 'Content-Type,Authorization',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
 };
 
 app.use(cors(corsOptions));
@@ -27,14 +27,15 @@ const jwtProvider = new JsonWebTokenProvider(
   env.JWT_ACCESS_TOKEN_EXPIRES_IN,
   env.JWT_REFRESH_TOKEN_EXPIRES_IN,
 );
-const authMiddleware = authenticate(jwtProvider);
+const bearerAuthMiddleware = bearerAuth(jwtProvider);
+const apiKeyAuthMiddleware = apiKeyAuth();
 
-app.use('/auth', authRoutes(jwtProvider));
-app.use('/users', authMiddleware, userRoutes());
-app.use('/templates', authMiddleware, templateRoutes());
-app.use('/template-versions', authMiddleware, templateVersionRoutes());
+app.use('/auth', apiKeyAuthMiddleware, authRoutes(jwtProvider));
+app.use('/users', apiKeyAuthMiddleware, bearerAuthMiddleware, userRoutes());
+app.use('/templates', apiKeyAuthMiddleware, bearerAuthMiddleware, templateRoutes());
+app.use('/template-versions', apiKeyAuthMiddleware, bearerAuthMiddleware, templateVersionRoutes());
+
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
-
 app.use(errorHandler);
 
 const PORT = Number(process.env.PORT) || 3000;

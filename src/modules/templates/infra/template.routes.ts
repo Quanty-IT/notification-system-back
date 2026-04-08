@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '@/infra/database/prisma.client';
-import { bearerAuth, registry } from '@/infra/swagger/swagger.registry';
+import { registry } from '@/infra/swagger/swagger.registry';
 import { createTemplateSchema, templateIdSchema, updateTemplateSchema } from '../application/template.schemas';
 import { TemplateService } from '../application/template.service';
 import { TemplateController } from './template.controller';
@@ -17,7 +17,12 @@ registry.registerPath({
   method: 'post',
   path: BASE_PATH,
   tags: [TAG],
-  security: [{ [bearerAuth.name]: [] }],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
   request: {
     body: {
       content: {
@@ -38,7 +43,12 @@ registry.registerPath({
   method: 'get',
   path: BASE_PATH,
   tags: [TAG],
-  security: [{ [bearerAuth.name]: [] }],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
   responses: {
     200: {
       description: 'List templates',
@@ -50,7 +60,12 @@ registry.registerPath({
   method: 'get',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
-  security: [{ [bearerAuth.name]: [] }],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
   request: {
     params: templateIdSchema,
   },
@@ -65,7 +80,12 @@ registry.registerPath({
   method: 'patch',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
-  security: [{ [bearerAuth.name]: [] }],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
   request: {
     params: templateIdSchema,
     body: {
@@ -87,7 +107,12 @@ registry.registerPath({
   method: 'patch',
   path: `${BASE_PATH}/{id}/activate`,
   tags: [TAG],
-  security: [{ [bearerAuth.name]: [] }],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
   request: {
     params: templateIdSchema,
   },
@@ -102,7 +127,12 @@ registry.registerPath({
   method: 'patch',
   path: `${BASE_PATH}/{id}/deactivate`,
   tags: [TAG],
-  security: [{ [bearerAuth.name]: [] }],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
   request: {
     params: templateIdSchema,
   },
@@ -117,7 +147,12 @@ registry.registerPath({
   method: 'delete',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
-  security: [{ [bearerAuth.name]: [] }],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
   request: {
     params: templateIdSchema,
   },

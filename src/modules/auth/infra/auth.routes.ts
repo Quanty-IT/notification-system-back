@@ -18,6 +18,12 @@ registry.registerPath({
   method: 'post',
   path: `${BASE_PATH}/sign-in`,
   tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
   request: {
     body: {
       content: {
@@ -41,6 +47,12 @@ registry.registerPath({
   method: 'post',
   path: `${BASE_PATH}/refresh-token`,
   tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
   request: {
     body: {
       content: {

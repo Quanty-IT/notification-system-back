@@ -14,6 +14,9 @@ const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
+  // API Key
+  API_KEY: z.string().min(1, 'API_KEY is required'),
+
   // JWT
   JWT_SECRET_KEY: z.string().min(1, 'JWT_SECRET_KEY is required'),
   JWT_ACCESS_TOKEN_EXPIRES_IN: z.string().min(1, 'JWT_ACCESS_TOKEN_EXPIRES_IN is required'),

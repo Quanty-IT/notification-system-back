@@ -3,7 +3,7 @@ import createHttpError from 'http-errors';
 import { Environment, env } from '@/config/env';
 import { JwtProvider } from '@/modules/auth/domain/jwt.provider';
 
-export const authenticate = (jwtProvider: JwtProvider): RequestHandler => {
+export const bearerAuth = (jwtProvider: JwtProvider): RequestHandler => {
   return async (request: Request, _response: Response, next: NextFunction) => {
     if (env.NODE_ENV === Environment.DEV) {
       return next();
@@ -15,9 +15,9 @@ export const authenticate = (jwtProvider: JwtProvider): RequestHandler => {
       throw new createHttpError.Unauthorized('Missing bearer token.');
     }
 
-    const [, token] = authHeader.split(' ');
+    const [scheme, token] = authHeader.split(' ');
 
-    if (!token) {
+    if (scheme !== 'Bearer' || !token) {
       throw new createHttpError.Unauthorized('Invalid bearer token.');
     }
 
@@ -29,7 +29,7 @@ export const authenticate = (jwtProvider: JwtProvider): RequestHandler => {
         email: payload.email,
       };
 
-      next();
+      return next();
     } catch {
       throw new createHttpError.Unauthorized('Invalid bearer token.');
     }
