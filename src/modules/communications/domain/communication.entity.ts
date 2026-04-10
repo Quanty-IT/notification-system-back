@@ -232,4 +232,14 @@ export class CommunicationEntity {
     this.props.templateVariablesJson = variables;
     this.props.updatedAt = new Date();
   }
+
+  public updateScheduledAt(scheduledAt: Date | null) {
+  if (this.props.status !== "draft" && this.props.status !== "scheduled") {
+    throw new Error(
+      "Cannot update scheduled date after communication is queued, processing, sent, failed or canceled"
+    );
+  }
+  this.props.scheduledAt = scheduledAt;
+  this.props.updatedAt = new Date();
+}
 }

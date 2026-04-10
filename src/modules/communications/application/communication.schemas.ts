@@ -79,10 +79,6 @@ export const updateCommunicationSchema = z.object({
   templateVersionId: z.string().nullable().optional(),
   templateVariablesJson: templateVariablesJsonSchema,
   scheduledAt: z.date().nullable().optional(),
-  queuedAt: z.date().nullable(),
-  processingAt: z.date().nullable(),
-  sentAt: z.date().nullable(),
-  createdByUserId: z.string().nullable().optional(),
 });
 
 export const communicationIdSchema = z.object({

@@ -11,6 +11,7 @@ import { JsonWebTokenProvider } from './modules/auth/infra/jsonwebtoken.provider
 import { templateVersionRoutes } from './modules/template-versions/infra/template-version.routes';
 import { templateRoutes } from './modules/templates/infra/template.routes';
 import { userRoutes } from './modules/users/infra/user.routes';
+import { communicationRoutes } from './modules/communications/infra/communication.routes';
 
 const app = express();
 const corsOptions = {
@@ -34,6 +35,7 @@ app.use('/auth', apiKeyAuthMiddleware, authRoutes(jwtProvider));
 app.use('/users', apiKeyAuthMiddleware, bearerAuthMiddleware, userRoutes());
 app.use('/templates', apiKeyAuthMiddleware, bearerAuthMiddleware, templateRoutes());
 app.use('/template-versions', apiKeyAuthMiddleware, bearerAuthMiddleware, templateVersionRoutes());
+app.use('/communications', apiKeyAuthMiddleware, bearerAuthMiddleware, communicationRoutes());
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 app.use(errorHandler);
