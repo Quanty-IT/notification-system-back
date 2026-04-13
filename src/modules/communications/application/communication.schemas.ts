@@ -78,7 +78,7 @@ export const updateCommunicationSchema = z.object({
   bodyType: z.enum(["text", "html"]).nullable().optional(),
   templateVersionId: z.string().nullable().optional(),
   templateVariablesJson: templateVariablesJsonSchema,
-  scheduledAt: z.date().nullable().optional(),
+  scheduledAt: z.coerce.date().nullable().optional(),
 });
 
 export const communicationIdSchema = z.object({
