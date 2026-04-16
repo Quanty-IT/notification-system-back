@@ -7,7 +7,6 @@ export type CommunicationProps = {
   status:
     | "draft"
     | "scheduled"
-    | "queued"
     | "processing"
     | "sent"
     | "failed"
@@ -18,9 +17,8 @@ export type CommunicationProps = {
   templateVersionId: string | null;
   templateVariablesJson: Record<string, TemplateVariableValue> | null;
   scheduledAt: Date | null;
-  queuedAt: Date | null;
-  processingAt: Date | null;
-  sentAt: Date | null;
+  processingAt: Date;
+  sentAt: Date;
   createdByUserId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -35,7 +33,6 @@ export class CommunicationEntity {
     status:
       | "draft"
       | "scheduled"
-      | "queued"
       | "processing"
       | "sent"
       | "failed"
@@ -46,10 +43,7 @@ export class CommunicationEntity {
     templateVersionId?: string | null,
     templateVariablesJson?: Record<string, TemplateVariableValue> | null,
     scheduledAt?: Date | null,
-    queuedAt?: Date | null,
-    processingAt?: Date | null,
-    sentAt?: Date | null,
-    createdByUserId?: string | null,
+            createdByUserId?: string | null,
   ) {
     if (sourceType === "template" && !templateVersionId) {
       throw new Error(
@@ -57,12 +51,7 @@ export class CommunicationEntity {
       );
     }
 
-    if (templateVersionId && !templateVariablesJson) {
-      throw new Error(
-        "Template variables JSON is required when template version ID is provided",
-      );
-    }
-
+    
     return new CommunicationEntity({
       id: crypto.randomUUID(),
       channel,
@@ -74,9 +63,8 @@ export class CommunicationEntity {
       templateVersionId: templateVersionId ?? null,
       templateVariablesJson: templateVariablesJson ?? null,
       scheduledAt: scheduledAt ?? null,
-      queuedAt: queuedAt ?? null,
-      processingAt: processingAt ?? null,
-      sentAt: sentAt ?? null,
+      processingAt: new Date(),
+      sentAt: new Date(),
       createdByUserId: createdByUserId ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -127,10 +115,6 @@ export class CommunicationEntity {
     return this.props.scheduledAt;
   }
 
-  get queuedAt() {
-    return this.props.queuedAt;
-  }
-
   get processingAt() {
     return this.props.processingAt;
   }
@@ -154,12 +138,6 @@ export class CommunicationEntity {
   public schedule(scheduledAt: Date) {
     this.props.status = "scheduled";
     this.props.scheduledAt = scheduledAt;
-    this.props.updatedAt = new Date();
-  }
-
-  public queue() {
-    this.props.status = "queued";
-    this.props.queuedAt = new Date();
     this.props.updatedAt = new Date();
   }
 

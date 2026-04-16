@@ -2,6 +2,7 @@ import {
   Prisma,
   Communication as PrismaCommunication,
 } from "../../../../generated/prisma/client";
+
 import {
   CommunicationEntity,
   TemplateVariableValue,
@@ -11,12 +12,12 @@ export class CommunicationMapper {
   static toDomain(communication: PrismaCommunication): CommunicationEntity {
     return CommunicationEntity.fromPersistence({
       id: communication.id,
+
       channel: communication.channel as "email" | "whatsapp" | "sms" | "teams",
       sourceType: communication.source_type as "manual" | "template",
       status: communication.status as
         | "draft"
         | "scheduled"
-        | "queued"
         | "processing"
         | "sent"
         | "failed"
@@ -31,7 +32,6 @@ export class CommunicationMapper {
           TemplateVariableValue
         > | null) ?? null,
       scheduledAt: communication.scheduled_at,
-      queuedAt: communication.queued_at,
       processingAt: communication.processing_at,
       sentAt: communication.sent_at,
       createdByUserId: communication.created_by_user_id,
@@ -53,9 +53,9 @@ export class CommunicationMapper {
       template_variables_json:
         communication.templateVariablesJson === null
           ? Prisma.DbNull
-          : communication.templateVariablesJson as Prisma.InputJsonValue,
+          : (communication.templateVariablesJson as Prisma.InputJsonValue),
+
       scheduled_at: communication.scheduledAt,
-      queued_at: communication.queuedAt,
       processing_at: communication.processingAt,
       sent_at: communication.sentAt,
       created_by_user_id: communication.createdByUserId,

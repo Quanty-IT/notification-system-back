@@ -22,6 +22,7 @@ export class CommunicationService {
 
   async create(
     input: CreateCommunicationInput,
+    createdByUserId: string,
   ): Promise<CreateCommunicationOutput> {
     if (input.sourceType === "template") {
       if (!input.templateVersionId) {
@@ -38,22 +39,25 @@ export class CommunicationService {
         );
       }
 
-      if (!input.templateVariablesJson) {
+      if (templateVersionExists.variablesSchemaJson && !input.templateVariablesJson) {
         throw new createHttpError.BadRequest(
-          "Template variables JSON is required when using template",
+          "Template variables JSON is required when template has variables",
         );
       }
-    }
 
-    // Validação do createdByUserId se fornecido
-    if (input.createdByUserId) {
-      const userExists = await this.userRepository.findById(
-        input.createdByUserId,
-      );
-      if (!userExists) {
-        throw new createHttpError.NotFound(
-          `User ${input.createdByUserId} not found`,
+      if (templateVersionExists.variablesSchemaJson && input.templateVariablesJson) {
+        const templateVariables = Object.keys(templateVersionExists.variablesSchemaJson);
+        const providedVariables = Object.keys(input.templateVariablesJson);
+        
+        const missingVariables = templateVariables.filter(
+          variable => !providedVariables.includes(variable)
         );
+        
+        if (missingVariables.length > 0) {
+          throw new createHttpError.BadRequest(
+            `Missing required template variables: ${missingVariables.join(', ')}`
+          );
+        }
       }
     }
 
@@ -67,10 +71,7 @@ export class CommunicationService {
       input.templateVersionId,
       input.templateVariablesJson,
       input.scheduledAt,
-      input.queuedAt,
-      input.processingAt,
-      input.sentAt,
-      input.createdByUserId,
+            createdByUserId,
     );
 
     await this.repository.create(communication);
@@ -98,83 +99,111 @@ export class CommunicationService {
     return this.toOutput(communication);
   }
 
-  async update(id: string, input: UpdateCommunicationInput): Promise<UpdateCommunicationOutput> {
+  async update(
+    id: string,
+    input: UpdateCommunicationInput,
+  ): Promise<UpdateCommunicationOutput> {
     const communication = await this.repository.findById(id);
 
-    if(!communication){
-        throw new createHttpError.NotFound(`Communication ${id} not found`);
+    if (!communication) {
+      throw new createHttpError.NotFound(`Communication ${id} not found`);
     }
 
-    if(input.templateVersionId !== undefined){
-        if(communication.sourceType === 'template' && !input.templateVersionId){
-            throw new createHttpError.BadRequest('Template version ID is required for template source type');
-        }
+    if (input.templateVersionId !== undefined) {
+      if (communication.sourceType === "template" && !input.templateVersionId) {
+        throw new createHttpError.BadRequest(
+          "Template version ID is required for template source type",
+        );
+      }
 
-    if (input.templateVersionId !== undefined && input.templateVersionId !== null) {
-      const templateVersionExists =
-        await this.templateVersionRepository.findById(input.templateVersionId);
-      if (!templateVersionExists) {
-        throw new createHttpError.NotFound(`Template version ${input.templateVersionId} not found`);
+      if (
+        input.templateVersionId !== undefined &&
+        input.templateVersionId !== null
+      ) {
+        const templateVersionExists =
+          await this.templateVersionRepository.findById(
+            input.templateVersionId,
+          );
+        if (!templateVersionExists) {
+          throw new createHttpError.NotFound(
+            `Template version ${input.templateVersionId} not found`,
+          );
+        }
       }
     }
-  }
 
-  if (input.templateVariablesJson !== undefined) {
-    if (
-      communication.sourceType === "template" &&
-      !input.templateVariablesJson &&
-      communication.templateVersionId
-    ) {
-      throw new createHttpError.BadRequest(
-        "Template variables JSON is required for template source type",
-      );
+    if (input.templateVariablesJson !== undefined) {
+      if (
+        communication.sourceType === "template" &&
+        !input.templateVariablesJson &&
+        communication.templateVersionId
+      ) {
+        throw new createHttpError.BadRequest(
+          "Template variables JSON is required for template source type",
+        );
+      }
     }
+
+    if (input.subject !== undefined) {
+      if (input.subject !== null) {
+        communication.updateSubject(input.subject);
+      }
+    }
+
+    if (input.body !== undefined || input.bodyType !== undefined) {
+      if (communication.sourceType === "template") {
+        throw new createHttpError.BadRequest(
+          "body and bodyType can only be updated for manual communications"
+        );
+      }
+    }
+
+    if (input.body !== undefined) {
+      if (input.body !== null) {
+        communication.updateBody(input.body);
+      }
+    }
+
+    if (input.bodyType !== undefined) {
+      if (input.bodyType !== null) {
+        communication.updateBodyType(input.bodyType);
+      }
+    }
+
+    if (input.templateVariablesJson !== undefined) {
+      if (communication.sourceType === "manual") {
+        throw new createHttpError.BadRequest(
+          "templateVariablesJson can only be updated for template communications"
+        );
+      }
+    }
+
+    if (input.templateVariablesJson !== undefined) {
+      if (input.templateVariablesJson !== null) {
+        communication.updateTemplateVariables(input.templateVariablesJson);
+      }
+    }
+
+    if (input.scheduledAt !== undefined) {
+      if (input.scheduledAt !== null) {
+        communication.updateScheduledAt(input.scheduledAt);
+      }
+    }
+
+    await this.repository.update(communication);
+
+    return this.toOutput(communication);
   }
 
-  if (input.subject !== undefined) {
-  if (input.subject !== null) {
-    communication.updateSubject(input.subject);
-  }
-}
- 
-if (input.body !== undefined) {
-  if (input.body !== null) {
-    communication.updateBody(input.body);
-  }
-}
- 
-if (input.bodyType !== undefined) {
-  if (input.bodyType !== null) {
-    communication.updateBodyType(input.bodyType);
-  }
-}
- 
-if (input.templateVariablesJson !== undefined) {
-  if (input.templateVariablesJson !== null) {
-    communication.updateTemplateVariables(input.templateVariablesJson);
-  }
-}
- 
-if (input.scheduledAt !== undefined) {
-  if (input.scheduledAt !== null) {
-    communication.updateScheduledAt(input.scheduledAt);
-  }
-}
- 
-  await this.repository.update(communication);
- 
-  return this.toOutput(communication);
-}
+  async delete(id: string): Promise<void> {
+    const communication = await this.repository.findById(id);
 
-async delete(id: string): Promise<void> {
-  const communication = await this.repository.findById(id);
+    if (!communication) {
+      throw new createHttpError.NotFound(`Communication ${id} not found`);
+    }
 
-  if (!communication) {
-    throw new createHttpError.NotFound(`Communication ${id} not found`);
+    await this.repository.delete(id);
   }
-
-  await this.repository.delete(id);
-}
 
   private toOutput(communication: CommunicationEntity): GetCommunicationOutput {
     return {
@@ -188,7 +217,6 @@ async delete(id: string): Promise<void> {
       templateVersionId: communication.templateVersionId,
       templateVariablesJson: communication.templateVariablesJson,
       scheduledAt: communication.scheduledAt,
-      queuedAt: communication.queuedAt,
       processingAt: communication.processingAt,
       sentAt: communication.sentAt,
       createdByUserId: communication.createdByUserId,

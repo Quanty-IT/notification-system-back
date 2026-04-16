@@ -11,8 +11,12 @@ export class CommunicationController {
 
   public async create(request: Request, response: Response) {
     const input = createCommunicationSchema.parse(request.body);
+    
+    if (!request.user?.id) {
+      throw new Error('User not authenticated');
+    }
 
-    const output = await this.service.create(input);
+    const output = await this.service.create(input, request.user.id);
 
     return response.status(201).json(output);
   }

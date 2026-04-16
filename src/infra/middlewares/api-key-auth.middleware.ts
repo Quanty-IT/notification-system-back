@@ -10,8 +10,6 @@ export const apiKeyAuth = (): RequestHandler => {
 
     const apiKey = request.headers['x-api-key'];
 
-    console.info('x-api-key:', request.headers);
-
     if (!apiKey) {
       throw new createHttpError.Unauthorized('Missing API key.');
     }

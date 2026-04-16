@@ -21,7 +21,6 @@ export const createCommunicationSchema = z
       .enum([
         "draft",
         "scheduled",
-        "queued",
         "processing",
         "sent",
         "failed",
@@ -32,12 +31,8 @@ export const createCommunicationSchema = z
     body: z.string().nullable().optional(),
     bodyType: z.enum(["text", "html"]).nullable().optional(),
     templateVersionId: z.string().nullable().optional(),
-    templateVariablesJson: templateVariablesJsonSchema,
-    scheduledAt: z.date().nullable().optional(),
-    queuedAt: z.date().nullable(),
-    processingAt: z.date().nullable(),
-    sentAt: z.date().nullable(),
-    createdByUserId: z.string().nullable().optional(),
+    templateVariablesJson: templateVariablesJsonSchema.nullable().optional(),
+    scheduledAt: z.coerce.date().nullable().optional(),
   })
   .refine(
     (data) => {
@@ -56,18 +51,29 @@ export const createCommunicationSchema = z
   )
   .refine(
     (data) => {
-      if (data.templateVersionId && !data.templateVariablesJson) {
-        return false;
+      if (data.sourceType === "template") {
+        return data.body === undefined && data.bodyType === undefined;
       }
       return true;
     },
     {
-      message:
-        "templateVariablesJson is required when templateVersionId is provided",
-      path: ["templateVariablesJson"],
+      message: "body and bodyType cannot be provided when sourceType is template",
+      path: ["body"],
     },
-  );
-
+  )
+  .refine(
+    (data) => {
+      if (data.sourceType === "manual") {
+        return data.templateVersionId === undefined && data.templateVariablesJson === undefined;
+      }
+      return true;
+    },
+    {
+      message: "templateVersionId and templateVariablesJson cannot be provided when sourceType is manual",
+      path: ["templateVersionId"],
+    },
+  )
+  
 export const updateCommunicationSchema = z.object({
   subject: z
     .string()
@@ -77,7 +83,7 @@ export const updateCommunicationSchema = z.object({
   body: z.string().nullable().optional(),
   bodyType: z.enum(["text", "html"]).nullable().optional(),
   templateVersionId: z.string().nullable().optional(),
-  templateVariablesJson: templateVariablesJsonSchema,
+  templateVariablesJson: templateVariablesJsonSchema.optional(),
   scheduledAt: z.coerce.date().nullable().optional(),
 });
 
