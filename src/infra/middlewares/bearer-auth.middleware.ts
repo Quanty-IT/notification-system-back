@@ -1,7 +1,7 @@
-import { NextFunction, Request, RequestHandler, Response } from 'express';
-import createHttpError from 'http-errors';
-import { Environment, env } from '@/config/env';
-import { JwtProvider } from '@/modules/auth/domain/jwt.provider';
+import { NextFunction, Request, RequestHandler, Response } from "express";
+import createHttpError from "http-errors";
+import { Environment, env } from "@/config/env";
+import { JwtProvider } from "@/modules/auth/domain/jwt.provider";
 
 export const bearerAuth = (jwtProvider: JwtProvider): RequestHandler => {
   return async (request: Request, _response: Response, next: NextFunction) => {
@@ -12,13 +12,13 @@ export const bearerAuth = (jwtProvider: JwtProvider): RequestHandler => {
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
-      throw new createHttpError.Unauthorized('Missing bearer token.');
+      throw new createHttpError.Unauthorized("Missing bearer token.");
     }
 
-    const [scheme, token] = authHeader.split(' ');
+    const [scheme, token] = authHeader.split(" ");
 
-    if (scheme !== 'Bearer' || !token) {
-      throw new createHttpError.Unauthorized('Invalid bearer token.');
+    if (scheme !== "Bearer" || !token) {
+      throw new createHttpError.Unauthorized("Invalid bearer token.");
     }
 
     try {
@@ -31,7 +31,7 @@ export const bearerAuth = (jwtProvider: JwtProvider): RequestHandler => {
 
       return next();
     } catch {
-      throw new createHttpError.Unauthorized('Invalid bearer token.');
+      throw new createHttpError.Unauthorized("Invalid bearer token.");
     }
   };
 };
