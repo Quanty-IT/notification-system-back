@@ -17,8 +17,8 @@ export type CommunicationProps = {
   templateVersionId: string | null;
   templateVariablesJson: Record<string, TemplateVariableValue> | null;
   scheduledAt: Date | null;
-  processingAt: Date;
-  sentAt: Date;
+  processingAt: Date | null;
+  sentAt: Date | null;
   createdByUserId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -63,8 +63,8 @@ export class CommunicationEntity {
       templateVersionId: templateVersionId ?? null,
       templateVariablesJson: templateVariablesJson ?? null,
       scheduledAt: scheduledAt ?? null,
-      processingAt: new Date(),
-      sentAt: new Date(),
+      processingAt: null,
+      sentAt: null,
       createdByUserId: createdByUserId ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -16,7 +16,7 @@ export type CommunicationOutput = {
     templateVersionId: string | null;
     templateVariablesJson: Record<string, TemplateVariableValue> | null;
     scheduledAt: Date | null;
-    processingAt: Date;
+    processingAt: Date | null;
     sentAt: Date | null;
     createdByUserId: string | null;
     createdAt: Date;
