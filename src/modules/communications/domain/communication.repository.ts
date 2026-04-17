@@ -1,4 +1,4 @@
-import { CommunicationEntity } from "./communication.entity";
+import { CommunicationEntity } from './communication.entity';
 
 export interface CommunicationRepository {
   create(communication: CommunicationEntity): Promise<void>;

@@ -1,7 +1,7 @@
-import { PrismaClient } from "../../../../generated/prisma/client";
-import { CommunicationEntity } from "../domain/communication.entity";
-import { CommunicationRepository } from "../domain/communication.repository";
-import { CommunicationMapper } from "./communication.mapper";
+import { PrismaClient } from '../../../../generated/prisma/client';
+import { CommunicationEntity } from '../domain/communication.entity';
+import { CommunicationRepository } from '../domain/communication.repository';
+import { CommunicationMapper } from './communication.mapper';
 
 export class CommunicationRepositoryPrisma implements CommunicationRepository {
   constructor(private readonly prisma: PrismaClient) {}

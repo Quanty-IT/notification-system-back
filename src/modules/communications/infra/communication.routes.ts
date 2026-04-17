@@ -1,36 +1,29 @@
-import { Router } from "express";
-import { z } from "zod";
-import { prisma } from "@/infra/database/prisma.client";
-import { registry } from "@/infra/swagger/swagger.registry";
-import { UserRepositoryPrisma } from "@/modules/users/infra/user.repository.prisma";
-import { TemplateVersionRepositoryPrisma } from "@/modules/template-versions/infra/template-version.repository.prisma";
+import { Router } from 'express';
+import { z } from 'zod';
+import { prisma } from '@/infra/database/prisma.client';
+import { registry } from '@/infra/swagger/swagger.registry';
+import { TemplateVersionRepositoryPrisma } from '@/modules/template-versions/infra/template-version.repository.prisma';
+import { UserRepositoryPrisma } from '@/modules/users/infra/user.repository.prisma';
 import {
-  createCommunicationSchema,
   communicationIdSchema,
+  createCommunicationSchema,
   updateCommunicationSchema,
-} from "../application/communication.schemas";
-import { CommunicationService } from "../application/communication.service";
-import { CommunicationController } from "./communication.controller";
-import { CommunicationRepositoryPrisma } from "./communication.repository.primsa";
+} from '../application/communication.schemas';
+import { CommunicationService } from '../application/communication.service';
+import { CommunicationController } from './communication.controller';
+import { CommunicationRepositoryPrisma } from './communication.repository.primsa';
 
-const BASE_PATH = "/communications";
-const TAG = "Communications";
+const BASE_PATH = '/communications';
+const TAG = 'Communications';
 
 const communicationResponseSchema = z.object({
   id: z.uuid(),
-  channel: z.enum(["email", "whatsapp", "sms", "teams"]),
-  sourceType: z.enum(["manual", "template"]),
-  status: z.enum([
-    "draft",
-    "scheduled",
-    "processing",
-    "sent",
-    "failed",
-    "canceled",
-  ]),
+  channel: z.enum(['email', 'whatsapp', 'sms', 'teams']),
+  sourceType: z.enum(['manual', 'template']),
+  status: z.enum(['draft', 'scheduled', 'processing', 'sent', 'failed', 'canceled']),
   subject: z.string().nullable(),
   body: z.string().nullable(),
-  bodyType: z.enum(["text", "html"]).nullable(),
+  bodyType: z.enum(['text', 'html']).nullable(),
   templateVersionId: z.string().nullable(),
   templateVariablesJson: z.record(z.string(), z.unknown()).nullable(),
   scheduledAt: z.string().nullable(),
@@ -46,24 +39,24 @@ const communicationListResponseSchema = z.object({
 });
 
 const communicationResponseExample = {
-  id: "9a4dcf08-1060-4c48-bf13-e2e8498e7fca",
-  channel: "email",
-  sourceType: "template",
-  status: "draft",
-  subject: "Bem-vindo ao sistema",
-  body: "<p>Olá {{name}}, seja bem-vindo!</p>",
-  bodyType: "html",
-  templateVersionId: "4e73dc89-c44e-4f89-bb31-f93eec4c264d",
+  id: '9a4dcf08-1060-4c48-bf13-e2e8498e7fca',
+  channel: 'email',
+  sourceType: 'template',
+  status: 'draft',
+  subject: 'Bem-vindo ao sistema',
+  body: '<p>Olá {{name}}, seja bem-vindo!</p>',
+  bodyType: 'html',
+  templateVersionId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
   templateVariablesJson: {
-    name: "João Silva",
+    name: 'João Silva',
   },
   scheduledAt: null,
   queuedAt: null,
   processingAt: null,
   sentAt: null,
-  createdByUserId: "123e4567-e89b-12d3-a456-426614174000",
-  createdAt: "2026-04-06T14:15:22.000Z",
-  updatedAt: "2026-04-06T14:15:22.000Z",
+  createdByUserId: '123e4567-e89b-12d3-a456-426614174000',
+  createdAt: '2026-04-06T14:15:22.000Z',
+  updatedAt: '2026-04-06T14:15:22.000Z',
 };
 
 const communicationListResponseExample = {
@@ -71,12 +64,12 @@ const communicationListResponseExample = {
     communicationResponseExample,
     {
       ...communicationResponseExample,
-      id: "dd9258c6-18a8-44b0-8842-6c5a7881f065",
-      channel: "whatsapp",
-      subject: "Confirmação de pedido",
-      body: "Seu pedido #{{orderId}} foi confirmado!",
-      bodyType: "text",
-      sourceType: "manual",
+      id: 'dd9258c6-18a8-44b0-8842-6c5a7881f065',
+      channel: 'whatsapp',
+      subject: 'Confirmação de pedido',
+      body: 'Seu pedido #{{orderId}} foi confirmado!',
+      bodyType: 'text',
+      sourceType: 'manual',
       templateVersionId: null,
       templateVariablesJson: null,
     },
@@ -84,15 +77,15 @@ const communicationListResponseExample = {
 };
 
 // Registry dos schemas
-registry.register("CreateCommunication", createCommunicationSchema);
-registry.register("UpdateCommunication", updateCommunicationSchema);
-registry.register("CommunicationId", communicationIdSchema);
-registry.register("CommunicationResponse", communicationResponseSchema);
-registry.register("CommunicationListResponse", communicationListResponseSchema);
+registry.register('CreateCommunication', createCommunicationSchema);
+registry.register('UpdateCommunication', updateCommunicationSchema);
+registry.register('CommunicationId', communicationIdSchema);
+registry.register('CommunicationResponse', communicationResponseSchema);
+registry.register('CommunicationListResponse', communicationListResponseSchema);
 
 // Registry dos paths para Swagger
 registry.registerPath({
-  method: "post",
+  method: 'post',
   path: BASE_PATH,
   tags: [TAG],
   security: [
@@ -104,17 +97,17 @@ registry.registerPath({
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: createCommunicationSchema,
           example: {
-            channel: "email",
-            sourceType: "template",
-            subject: "Bem-vindo ao sistema",
-            body: "<p>Olá {{name}}, seja bem-vindo!</p>",
-            bodyType: "html",
-            templateVersionId: "4e73dc89-c44e-4f89-bb31-f93eec4c264d",
+            channel: 'email',
+            sourceType: 'template',
+            subject: 'Bem-vindo ao sistema',
+            body: '<p>Olá {{name}}, seja bem-vindo!</p>',
+            bodyType: 'html',
+            templateVersionId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
             templateVariablesJson: {
-              name: "João Silva",
+              name: 'João Silva',
             },
             scheduledAt: null,
             processingAt: null,
@@ -125,9 +118,9 @@ registry.registerPath({
   },
   responses: {
     201: {
-      description: "Communication created",
+      description: 'Communication created',
       content: {
-        "application/json": {
+        'application/json': {
           schema: communicationResponseSchema,
           example: communicationResponseExample,
         },
@@ -137,7 +130,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  method: "get",
+  method: 'get',
   path: BASE_PATH,
   tags: [TAG],
   security: [
@@ -148,9 +141,9 @@ registry.registerPath({
   ],
   responses: {
     200: {
-      description: "List communications",
+      description: 'List communications',
       content: {
-        "application/json": {
+        'application/json': {
           schema: communicationListResponseSchema,
           example: communicationListResponseExample,
         },
@@ -160,7 +153,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  method: "get",
+  method: 'get',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
   security: [
@@ -174,9 +167,9 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: "Communication found",
+      description: 'Communication found',
       content: {
-        "application/json": {
+        'application/json': {
           schema: communicationResponseSchema,
           example: communicationResponseExample,
         },
@@ -186,7 +179,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  method: "patch",
+  method: 'patch',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
   security: [
@@ -199,16 +192,16 @@ registry.registerPath({
     params: communicationIdSchema,
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: updateCommunicationSchema,
           example: {
-            subject: "Assunto atualizado",
-            body: "<p>Conteúdo atualizado</p>",
-            bodyType: "html",
+            subject: 'Assunto atualizado',
+            body: '<p>Conteúdo atualizado</p>',
+            bodyType: 'html',
             templateVariablesJson: {
-              name: "Maria Silva",
+              name: 'Maria Silva',
             },
-            scheduledAt: "2026-04-10T15:00:00.000Z",
+            scheduledAt: '2026-04-10T15:00:00.000Z',
           },
         },
       },
@@ -216,9 +209,9 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: "Communication updated",
+      description: 'Communication updated',
       content: {
-        "application/json": {
+        'application/json': {
           schema: communicationResponseSchema,
           example: communicationResponseExample,
         },
@@ -228,7 +221,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  method: "delete",
+  method: 'delete',
   path: `${BASE_PATH}/{id}`,
   tags: [TAG],
   security: [
@@ -242,7 +235,7 @@ registry.registerPath({
   },
   responses: {
     204: {
-      description: "Communication deleted",
+      description: 'Communication deleted',
     },
   },
 });
@@ -253,18 +246,14 @@ export const communicationRoutes = () => {
   const repository = new CommunicationRepositoryPrisma(prisma);
   const templateVersionRepository = new TemplateVersionRepositoryPrisma(prisma);
   const userRepository = new UserRepositoryPrisma(prisma);
-  const service = new CommunicationService(
-    repository,
-    templateVersionRepository,
-    userRepository,
-  );
+  const service = new CommunicationService(repository, templateVersionRepository, userRepository);
   const controller = new CommunicationController(service);
 
-  router.post("/", controller.create.bind(controller));
-  router.get("/", controller.findAll.bind(controller));
-  router.get("/:id", controller.findById.bind(controller));
-  router.patch("/:id", controller.update.bind(controller));
-  router.delete("/:id", controller.delete.bind(controller));
+  router.post('/', controller.create.bind(controller));
+  router.get('/', controller.findAll.bind(controller));
+  router.get('/:id', controller.findById.bind(controller));
+  router.patch('/:id', controller.update.bind(controller));
+  router.delete('/:id', controller.delete.bind(controller));
 
   return router;
 };

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import {
-  createCommunicationSchema,
   communicationIdSchema,
+  createCommunicationSchema,
   updateCommunicationSchema,
 } from '../application/communication.schemas';
 import { CommunicationService } from '../application/communication.service';
@@ -11,7 +11,7 @@ export class CommunicationController {
 
   public async create(request: Request, response: Response) {
     const input = createCommunicationSchema.parse(request.body);
-    
+
     if (!request.user?.id) {
       throw new Error('User not authenticated');
     }
@@ -21,7 +21,7 @@ export class CommunicationController {
     return response.status(201).json(output);
   }
 
-  public async findAll(request: Request, response: Response) {
+  public async findAll(_request: Request, response: Response) {
     const output = await this.service.findAll();
 
     return response.status(200).json(output);

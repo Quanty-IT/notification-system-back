@@ -1,62 +1,45 @@
-import createHttpError from "http-errors";
-
-import { CommunicationRepository } from "../domain/communication.repository";
-import { CommunicationEntity } from "../domain/communication.entity";
-import { TemplateVersionRepository } from "@/modules/template-versions/domain/template-version.repository";
-import { UserRepository } from "@/modules/users/domain/user.repository";
+import createHttpError from 'http-errors';
+import { TemplateVersionRepository } from '@/modules/template-versions/domain/template-version.repository';
+import { CommunicationEntity } from '../domain/communication.entity';
+import { CommunicationRepository } from '../domain/communication.repository';
 import {
   CreateCommunicationInput,
   CreateCommunicationOutput,
+  FindCommunicationsOutput,
+  GetCommunicationOutput,
   UpdateCommunicationInput,
   UpdateCommunicationOutput,
-  GetCommunicationOutput,
-  FindCommunicationsOutput,
-} from "./communication.dto";
+} from './communication.dto';
 
 export class CommunicationService {
   constructor(
     private readonly repository: CommunicationRepository,
     private readonly templateVersionRepository: TemplateVersionRepository,
-    private readonly userRepository: UserRepository,
   ) {}
 
-  async create(
-    input: CreateCommunicationInput,
-    createdByUserId: string,
-  ): Promise<CreateCommunicationOutput> {
-    if (input.sourceType === "template") {
+  async create(input: CreateCommunicationInput, createdByUserId: string): Promise<CreateCommunicationOutput> {
+    if (input.sourceType === 'template') {
       if (!input.templateVersionId) {
-        throw new createHttpError.BadRequest(
-          "Template version ID is required when source type is template",
-        );
+        throw new createHttpError.BadRequest('Template version ID is required when source type is template');
       }
 
-      const templateVersionExists =
-        await this.templateVersionRepository.findById(input.templateVersionId);
+      const templateVersionExists = await this.templateVersionRepository.findById(input.templateVersionId);
       if (!templateVersionExists) {
-        throw new createHttpError.NotFound(
-          `Template version ${input.templateVersionId} not found`,
-        );
+        throw new createHttpError.NotFound(`Template version ${input.templateVersionId} not found`);
       }
 
       if (templateVersionExists.variablesSchemaJson && !input.templateVariablesJson) {
-        throw new createHttpError.BadRequest(
-          "Template variables JSON is required when template has variables",
-        );
+        throw new createHttpError.BadRequest('Template variables JSON is required when template has variables');
       }
 
       if (templateVersionExists.variablesSchemaJson && input.templateVariablesJson) {
         const templateVariables = Object.keys(templateVersionExists.variablesSchemaJson);
         const providedVariables = Object.keys(input.templateVariablesJson);
-        
-        const missingVariables = templateVariables.filter(
-          variable => !providedVariables.includes(variable)
-        );
-        
+
+        const missingVariables = templateVariables.filter((variable) => !providedVariables.includes(variable));
+
         if (missingVariables.length > 0) {
-          throw new createHttpError.BadRequest(
-            `Missing required template variables: ${missingVariables.join(', ')}`
-          );
+          throw new createHttpError.BadRequest(`Missing required template variables: ${missingVariables.join(', ')}`);
         }
       }
     }
@@ -71,7 +54,7 @@ export class CommunicationService {
       input.templateVersionId,
       input.templateVariablesJson,
       input.scheduledAt,
-            createdByUserId,
+      createdByUserId,
     );
 
     await this.repository.create(communication);
@@ -83,9 +66,7 @@ export class CommunicationService {
     const communications = await this.repository.findAll();
 
     return {
-      communications: communications.map((communication) =>
-        this.toOutput(communication),
-      ),
+      communications: communications.map((communication) => this.toOutput(communication)),
     };
   }
 
@@ -99,10 +80,7 @@ export class CommunicationService {
     return this.toOutput(communication);
   }
 
-  async update(
-    id: string,
-    input: UpdateCommunicationInput,
-  ): Promise<UpdateCommunicationOutput> {
+  async update(id: string, input: UpdateCommunicationInput): Promise<UpdateCommunicationOutput> {
     const communication = await this.repository.findById(id);
 
     if (!communication) {
@@ -110,37 +88,21 @@ export class CommunicationService {
     }
 
     if (input.templateVersionId !== undefined) {
-      if (communication.sourceType === "template" && !input.templateVersionId) {
-        throw new createHttpError.BadRequest(
-          "Template version ID is required for template source type",
-        );
+      if (communication.sourceType === 'template' && !input.templateVersionId) {
+        throw new createHttpError.BadRequest('Template version ID is required for template source type');
       }
 
-      if (
-        input.templateVersionId !== undefined &&
-        input.templateVersionId !== null
-      ) {
-        const templateVersionExists =
-          await this.templateVersionRepository.findById(
-            input.templateVersionId,
-          );
+      if (input.templateVersionId !== undefined && input.templateVersionId !== null) {
+        const templateVersionExists = await this.templateVersionRepository.findById(input.templateVersionId);
         if (!templateVersionExists) {
-          throw new createHttpError.NotFound(
-            `Template version ${input.templateVersionId} not found`,
-          );
+          throw new createHttpError.NotFound(`Template version ${input.templateVersionId} not found`);
         }
       }
     }
 
     if (input.templateVariablesJson !== undefined) {
-      if (
-        communication.sourceType === "template" &&
-        !input.templateVariablesJson &&
-        communication.templateVersionId
-      ) {
-        throw new createHttpError.BadRequest(
-          "Template variables JSON is required for template source type",
-        );
+      if (communication.sourceType === 'template' && !input.templateVariablesJson && communication.templateVersionId) {
+        throw new createHttpError.BadRequest('Template variables JSON is required for template source type');
       }
     }
 
@@ -151,10 +113,8 @@ export class CommunicationService {
     }
 
     if (input.body !== undefined || input.bodyType !== undefined) {
-      if (communication.sourceType === "template") {
-        throw new createHttpError.BadRequest(
-          "body and bodyType can only be updated for manual communications"
-        );
+      if (communication.sourceType === 'template') {
+        throw new createHttpError.BadRequest('body and bodyType can only be updated for manual communications');
       }
     }
 
@@ -171,10 +131,8 @@ export class CommunicationService {
     }
 
     if (input.templateVariablesJson !== undefined) {
-      if (communication.sourceType === "manual") {
-        throw new createHttpError.BadRequest(
-          "templateVariablesJson can only be updated for template communications"
-        );
+      if (communication.sourceType === 'manual') {
+        throw new createHttpError.BadRequest('templateVariablesJson can only be updated for template communications');
       }
     }
 

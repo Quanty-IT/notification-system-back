@@ -1,28 +1,17 @@
-import {
-  Prisma,
-  TemplateVersion as PrismaTemplateVersion,
-} from "../../../../generated/prisma/client";
-import {
-  TemplateVersionEntity,
-  TemplateVersionVariableType,
-} from "../domain/template-version.entity";
+import { Prisma, TemplateVersion as PrismaTemplateVersion } from '../../../../generated/prisma/client';
+import { TemplateVersionEntity, TemplateVersionVariableType } from '../domain/template-version.entity';
 
 export class TemplateVersionMapper {
-  static toDomain(
-    templateVersion: PrismaTemplateVersion,
-  ): TemplateVersionEntity {
+  static toDomain(templateVersion: PrismaTemplateVersion): TemplateVersionEntity {
     return TemplateVersionEntity.fromPersistence({
       id: templateVersion.id,
       templateId: templateVersion.template_id,
       version: templateVersion.version,
       subject: templateVersion.subject,
       body: templateVersion.body,
-      bodyType: templateVersion.body_type as "text" | "html",
+      bodyType: templateVersion.body_type as 'text' | 'html',
       variablesSchemaJson:
-        (templateVersion.variables_schema_json as Record<
-          string,
-          TemplateVersionVariableType
-        > | null) ?? null,
+        (templateVersion.variables_schema_json as Record<string, TemplateVersionVariableType> | null) ?? null,
       isActive: templateVersion.is_active,
       createdAt: templateVersion.created_at,
       updatedAt: templateVersion.updated_at,

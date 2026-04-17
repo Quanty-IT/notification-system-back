@@ -1,36 +1,21 @@
-import {
-  Prisma,
-  Communication as PrismaCommunication,
-} from "../../../../generated/prisma/client";
+import { Prisma, Communication as PrismaCommunication } from '../../../../generated/prisma/client';
 
-import {
-  CommunicationEntity,
-  TemplateVariableValue,
-} from "../domain/communication.entity";
+import { CommunicationEntity, TemplateVariableValue } from '../domain/communication.entity';
 
 export class CommunicationMapper {
   static toDomain(communication: PrismaCommunication): CommunicationEntity {
     return CommunicationEntity.fromPersistence({
       id: communication.id,
 
-      channel: communication.channel as "email" | "whatsapp" | "sms" | "teams",
-      sourceType: communication.source_type as "manual" | "template",
-      status: communication.status as
-        | "draft"
-        | "scheduled"
-        | "processing"
-        | "sent"
-        | "failed"
-        | "canceled",
+      channel: communication.channel as 'email' | 'whatsapp' | 'sms' | 'teams',
+      sourceType: communication.source_type as 'manual' | 'template',
+      status: communication.status as 'draft' | 'scheduled' | 'processing' | 'sent' | 'failed' | 'canceled',
       subject: communication.subject,
       body: communication.body,
-      bodyType: communication.body_type as "text" | "html",
+      bodyType: communication.body_type as 'text' | 'html',
       templateVersionId: communication.template_version_id,
       templateVariablesJson:
-        (communication.template_variables_json as Record<
-          string,
-          TemplateVariableValue
-        > | null) ?? null,
+        (communication.template_variables_json as Record<string, TemplateVariableValue> | null) ?? null,
       scheduledAt: communication.scheduled_at,
       processingAt: communication.processing_at,
       sentAt: communication.sent_at,
