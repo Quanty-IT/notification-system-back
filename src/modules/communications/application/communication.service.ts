@@ -288,6 +288,7 @@ export class CommunicationService {
       originalFileName: attachment.originalFileName,
       storageProvider: attachment.storageProvider,
       storageKey: attachment.storageKey,
+      fileUrl: `${process.env.CLOUDFLARE_PUBLIC_URL}/${attachment.storageKey}`,
       mimeType: attachment.mimeType,
       fileSizeBytes: attachment.fileSizeBytes,
       createdAt: attachment.createdAt,

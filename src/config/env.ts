@@ -24,6 +24,7 @@ const envSchema = z.object({
 
   // Cloudflare
   CLOUDFLARE_ENDPOINT: z.string().min(1, 'CLOUDFLARE_ENDPOINT is required'),
+  CLOUDFLARE_PUBLIC_URL: z.string().min(1, 'CLOUDFLARE_PUBLIC_URL is required'),
   CLOUDFLARE_BUCKET_NAME: z.string().min(1, 'CLOUDFLARE_BUCKET_NAME is required'),
   CLOUDFLARE_ACCESS_KEY_ID: z.string().min(1, 'CLOUDFLARE_ACCESS_KEY_ID is required'),
   CLOUDFLARE_SECRET_ACCESS_KEY: z.string().min(1, 'CLOUDFLARE_SECRET_ACCESS_KEY is required'),

@@ -11,6 +11,7 @@ export type CommunicationAttachmentOutput = {
   originalFileName: string;
   storageProvider: 's3' | 'r2';
   storageKey: string;
+  fileUrl: string;
   mimeType: string;
   fileSizeBytes: number;
   createdAt: Date;
