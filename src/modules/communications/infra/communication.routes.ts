@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { prisma } from '@/infra/database/prisma.client';
 import { registry } from '@/infra/swagger/swagger.registry';
 import { TemplateVersionRepositoryPrisma } from '@/modules/template-versions/infra/template-version.repository.prisma';
-import { UserRepositoryPrisma } from '@/modules/users/infra/user.repository.prisma';
 import {
   communicationIdSchema,
   createCommunicationSchema,
@@ -11,7 +10,7 @@ import {
 } from '../application/communication.schemas';
 import { CommunicationService } from '../application/communication.service';
 import { CommunicationController } from './communication.controller';
-import { CommunicationRepositoryPrisma } from './communication.repository.primsa';
+import { CommunicationRepositoryPrisma } from './communication.repository.prisma';
 
 const BASE_PATH = '/communications';
 const TAG = 'Communications';
@@ -27,7 +26,6 @@ const communicationResponseSchema = z.object({
   templateVersionId: z.string().nullable(),
   templateVariablesJson: z.record(z.string(), z.unknown()).nullable(),
   scheduledAt: z.string().nullable(),
-  processingAt: z.string(),
   sentAt: z.string(),
   createdByUserId: z.string().nullable(),
   createdAt: z.string(),
@@ -52,7 +50,6 @@ const communicationResponseExample = {
   },
   scheduledAt: null,
   queuedAt: null,
-  processingAt: null,
   sentAt: null,
   createdByUserId: '123e4567-e89b-12d3-a456-426614174000',
   createdAt: '2026-04-06T14:15:22.000Z',
@@ -110,7 +107,6 @@ registry.registerPath({
               name: 'João Silva',
             },
             scheduledAt: null,
-            processingAt: null,
           },
         },
       },
@@ -245,8 +241,7 @@ export const communicationRoutes = () => {
 
   const repository = new CommunicationRepositoryPrisma(prisma);
   const templateVersionRepository = new TemplateVersionRepositoryPrisma(prisma);
-  const userRepository = new UserRepositoryPrisma(prisma);
-  const service = new CommunicationService(repository, templateVersionRepository, userRepository);
+  const service = new CommunicationService(repository, templateVersionRepository);
   const controller = new CommunicationController(service);
 
   router.post('/', controller.create.bind(controller));
