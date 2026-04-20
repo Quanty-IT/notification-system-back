@@ -41,10 +41,7 @@ const templateVersionResponseExample = {
   body: '<p>Ola {{name}}, confirme seu cadastro no link abaixo.</p>',
   bodyType: 'html',
   variablesSchemaJson: {
-    name: {
-      type: 'string',
-      required: true,
-    },
+    name: 'string',
   },
   isActive: true,
   createdAt: '2026-04-06T14:15:22.000Z',
@@ -62,10 +59,7 @@ const templateVersionListResponseExample = {
       body: 'Ola {{name}}, seu cadastro foi criado com sucesso.',
       bodyType: 'text',
       variablesSchemaJson: {
-        name: {
-          type: 'string',
-          required: true,
-        },
+        name: 'string',
       },
       isActive: false,
       createdAt: '2026-04-05T10:00:00.000Z',
@@ -102,10 +96,7 @@ registry.registerPath({
             body: '<p>Ola {{name}}, confirme seu cadastro no link abaixo.</p>',
             bodyType: 'html',
             variablesSchemaJson: {
-              name: {
-                type: 'string',
-                required: true,
-              },
+              name: 'string',
             },
           },
         },
@@ -198,10 +189,7 @@ registry.registerPath({
             body: '<p>Ola {{name}}, confirme seu cadastro no botao abaixo.</p>',
             bodyType: 'html',
             variablesSchemaJson: {
-              name: {
-                type: 'string',
-                required: true,
-              },
+              name: 'string',
             },
           },
         },
