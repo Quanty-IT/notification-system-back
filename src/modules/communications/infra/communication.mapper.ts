@@ -7,7 +7,7 @@ export class CommunicationMapper {
     return CommunicationEntity.fromPersistence({
       id: communication.id,
 
-      channel: communication.channel as 'email' | 'whatsapp' | 'sms' | 'teams',
+      channel: communication.channel as 'email',
       sourceType: communication.source_type as 'manual' | 'template',
       status: communication.status as 'draft' | 'scheduled' | 'processing' | 'sent' | 'failed' | 'canceled',
       subject: communication.subject,

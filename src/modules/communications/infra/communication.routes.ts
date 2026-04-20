@@ -46,7 +46,7 @@ const communicationAttachmentListResponseSchema = z.object({
 
 const communicationResponseSchema = z.object({
   id: z.uuid(),
-  channel: z.enum(['email', 'whatsapp', 'sms', 'teams']),
+  channel: z.enum(['email']),
   sourceType: z.enum(['manual', 'template']),
   status: z.enum(['draft', 'scheduled', 'processing', 'sent', 'failed', 'canceled']),
   subject: z.string().nullable(),

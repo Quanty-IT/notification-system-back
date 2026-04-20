@@ -2,7 +2,7 @@ export type TemplateVariableValue = string | number | boolean;
 
 export type CommunicationProps = {
   id: string;
-  channel: 'email' | 'whatsapp' | 'sms' | 'teams';
+  channel: 'email';
   sourceType: 'manual' | 'template';
   status: 'draft' | 'scheduled' | 'processing' | 'sent' | 'failed' | 'canceled';
   subject: string | null;
@@ -22,7 +22,7 @@ export class CommunicationEntity {
   private constructor(readonly props: CommunicationProps) {}
 
   public static create(
-    channel: 'email' | 'whatsapp' | 'sms' | 'teams',
+    channel: 'email',
     sourceType: 'manual' | 'template',
     status: 'draft' | 'scheduled' | 'processing' | 'sent' | 'failed' | 'canceled',
     subject?: string | null,

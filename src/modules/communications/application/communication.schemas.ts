@@ -9,7 +9,7 @@ export const templateVariablesJsonSchema = z.record(z.string(), templateVariable
 
 export const createCommunicationSchema = z
   .object({
-    channel: z.enum(['email', 'whatsapp', 'sms', 'teams']),
+    channel: z.enum(['email']),
     sourceType: z.enum(['manual', 'template']),
     status: z.enum(['draft', 'scheduled', 'processing', 'sent', 'failed', 'canceled']).default('draft'),
     subject: z.string().max(255).nullable().optional(),

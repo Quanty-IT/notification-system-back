@@ -19,7 +19,7 @@ export type CommunicationAttachmentOutput = {
 
 export type CommunicationOutput = {
   id: string;
-  channel: 'email' | 'whatsapp' | 'sms' | 'teams';
+  channel: 'email';
   sourceType: 'manual' | 'template';
   status: 'draft' | 'scheduled' | 'processing' | 'sent' | 'failed' | 'canceled';
   subject: string | null;
