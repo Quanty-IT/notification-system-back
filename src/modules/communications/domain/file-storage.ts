@@ -5,7 +5,7 @@ export type UploadFileInput = {
 };
 
 export type UploadFileOutput = {
-  storageProvider: 's3' | 'r2';
+  storageProvider: 'r2';
   storageKey: string;
 };
 

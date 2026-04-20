@@ -7,7 +7,7 @@ export class CommunicationAttachmentMapper {
       id: attachment.id,
       communicationId: attachment.communication_id,
       originalFileName: attachment.original_file_name,
-      storageProvider: attachment.storage_provider as 's3' | 'r2',
+      storageProvider: attachment.storage_provider as 'r2',
       storageKey: attachment.storage_key,
       mimeType: attachment.mime_type,
       fileSizeBytes: Number(attachment.file_size_bytes),

@@ -9,7 +9,7 @@ export type CommunicationAttachmentOutput = {
   id: string;
   communicationId: string;
   originalFileName: string;
-  storageProvider: 's3' | 'r2';
+  storageProvider: 'r2';
   storageKey: string;
   fileUrl: string;
   mimeType: string;

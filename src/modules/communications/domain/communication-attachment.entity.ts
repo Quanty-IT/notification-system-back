@@ -1,4 +1,4 @@
-export type StorageProvider = 's3' | 'r2';
+export type StorageProvider = 'r2';
 
 export type CommunicationAttachmentProps = {
   id: string;
