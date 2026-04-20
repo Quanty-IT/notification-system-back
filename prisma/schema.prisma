@@ -66,8 +66,27 @@ model Communication {
   created_by_user_id      String?
   created_at              DateTime         @default(now())
   updated_at              DateTime         @updatedAt
+
   template_version        TemplateVersion? @relation(fields: [template_version_id], references: [id], onDelete: SetNull)
   user                    User?            @relation(fields: [created_by_user_id], references: [id], onDelete: SetNull)
 
+  attachments             CommunicationAttachment[]
+
   @@map("communications")
+}
+
+model CommunicationAttachment {
+  id                 String   @id @default(uuid())
+  communication_id   String
+  original_file_name String   @db.VarChar(255)
+  storage_provider   String   @db.VarChar(30)
+  storage_key        String   @db.VarChar(500)
+  mime_type          String   @db.VarChar(120)
+  file_size_bytes    BigInt
+  created_at         DateTime @default(now())
+
+  communication Communication @relation(fields: [communication_id], references: [id], onDelete: Cascade)
+
+  @@index([communication_id])
+  @@map("communication_attachments")
 }

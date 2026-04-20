@@ -5,6 +5,17 @@ import { createCommunicationSchema, updateCommunicationSchema } from './communic
 export type CreateCommunicationInput = z.infer<typeof createCommunicationSchema>;
 export type UpdateCommunicationInput = z.infer<typeof updateCommunicationSchema>;
 
+export type CommunicationAttachmentOutput = {
+  id: string;
+  communicationId: string;
+  originalFileName: string;
+  storageProvider: 's3' | 'r2';
+  storageKey: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  createdAt: Date;
+};
+
 export type CommunicationOutput = {
   id: string;
   channel: 'email' | 'whatsapp' | 'sms' | 'teams';
@@ -26,8 +37,17 @@ export type CommunicationOutput = {
 export type CreateCommunicationOutput = Omit<CommunicationOutput, 'createdByUserId' | 'sentAt'> & {
   sentAt?: Date | null;
 };
+
 export type UpdateCommunicationOutput = CommunicationOutput;
-export type GetCommunicationOutput = CommunicationOutput;
+
+export type GetCommunicationOutput = CommunicationOutput & {
+  attachments: CommunicationAttachmentOutput[];
+};
+
 export type FindCommunicationsOutput = {
   communications: CommunicationOutput[];
+};
+
+export type FindCommunicationAttachmentsOutput = {
+  attachments: CommunicationAttachmentOutput[];
 };

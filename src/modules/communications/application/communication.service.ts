@@ -2,19 +2,33 @@ import createHttpError from 'http-errors';
 import { TemplateVersionRepository } from '@/modules/template-versions/domain/template-version.repository';
 import { CommunicationEntity } from '../domain/communication.entity';
 import { CommunicationRepository } from '../domain/communication.repository';
+import { CommunicationAttachmentEntity } from '../domain/communication-attachment.entity';
+import { FileStorage } from '../domain/file-storage';
 import {
+  CommunicationAttachmentOutput,
   CreateCommunicationInput,
   CreateCommunicationOutput,
+  FindCommunicationAttachmentsOutput,
   FindCommunicationsOutput,
   GetCommunicationOutput,
   UpdateCommunicationInput,
   UpdateCommunicationOutput,
 } from './communication.dto';
 
+type AddAttachmentInput = {
+  originalFileName: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  content: Buffer;
+};
+
+const TEN_MEGABYTES = 10 * 1024 * 1024;
+
 export class CommunicationService {
   constructor(
     private readonly repository: CommunicationRepository,
     private readonly templateVersionRepository: TemplateVersionRepository,
+    private readonly fileStorage: FileStorage,
   ) {}
 
   async create(input: CreateCommunicationInput, createdByUserId: string): Promise<CreateCommunicationOutput> {
@@ -77,7 +91,12 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${id} not found`);
     }
 
-    return this.toOutput(communication);
+    const attachments = await this.repository.findAttachmentsByCommunicationId(id);
+
+    return {
+      ...this.toOutput(communication),
+      attachments: attachments.map((attachment) => this.toAttachmentOutput(attachment)),
+    };
   }
 
   async update(id: string, input: UpdateCommunicationInput): Promise<UpdateCommunicationOutput> {
@@ -143,9 +162,7 @@ export class CommunicationService {
     }
 
     if (input.scheduledAt !== undefined) {
-      if (input.scheduledAt !== null) {
-        communication.updateScheduledAt(input.scheduledAt);
-      }
+      communication.updateScheduledAt(input.scheduledAt);
     }
 
     await this.repository.update(communication);
@@ -160,10 +177,91 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${id} not found`);
     }
 
+    const attachments = await this.repository.findAttachmentsByCommunicationId(id);
+
+    for (const attachment of attachments) {
+      await this.fileStorage.delete(attachment.storageKey);
+      await this.repository.deleteAttachment(attachment.id);
+    }
+
     await this.repository.delete(id);
   }
 
-  private toOutput(communication: CommunicationEntity): GetCommunicationOutput {
+  async addAttachment(communicationId: string, input: AddAttachmentInput): Promise<CommunicationAttachmentOutput> {
+    const communication = await this.repository.findById(communicationId);
+
+    if (!communication) {
+      throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
+    }
+
+    if (communication.status !== 'draft' && communication.status !== 'scheduled') {
+      throw new createHttpError.BadRequest('Attachments can only be added to draft or scheduled communications');
+    }
+
+    if (input.fileSizeBytes <= 0) {
+      throw new createHttpError.BadRequest('Invalid file size');
+    }
+
+    if (input.fileSizeBytes > TEN_MEGABYTES) {
+      throw new createHttpError.BadRequest('File exceeds maximum allowed size of 10 MB');
+    }
+
+    const uploadedFile = await this.fileStorage.upload({
+      fileName: input.originalFileName,
+      mimeType: input.mimeType,
+      content: input.content,
+    });
+
+    const attachment = CommunicationAttachmentEntity.create(
+      communicationId,
+      input.originalFileName,
+      uploadedFile.storageProvider,
+      uploadedFile.storageKey,
+      input.mimeType,
+      input.fileSizeBytes,
+    );
+
+    await this.repository.createAttachment(attachment);
+
+    return this.toAttachmentOutput(attachment);
+  }
+
+  async findAttachmentsByCommunicationId(communicationId: string): Promise<FindCommunicationAttachmentsOutput> {
+    const communication = await this.repository.findById(communicationId);
+
+    if (!communication) {
+      throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
+    }
+
+    const attachments = await this.repository.findAttachmentsByCommunicationId(communicationId);
+
+    return {
+      attachments: attachments.map((attachment) => this.toAttachmentOutput(attachment)),
+    };
+  }
+
+  async removeAttachment(communicationId: string, attachmentId: string): Promise<void> {
+    const communication = await this.repository.findById(communicationId);
+
+    if (!communication) {
+      throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
+    }
+
+    if (communication.status !== 'draft' && communication.status !== 'scheduled') {
+      throw new createHttpError.BadRequest('Attachments can only be removed from draft or scheduled communications');
+    }
+
+    const attachment = await this.repository.findAttachmentById(attachmentId);
+
+    if (!attachment || attachment.communicationId !== communicationId) {
+      throw new createHttpError.NotFound(`Attachment ${attachmentId} not found for communication ${communicationId}`);
+    }
+
+    await this.fileStorage.delete(attachment.storageKey);
+    await this.repository.deleteAttachment(attachmentId);
+  }
+
+  private toOutput(communication: CommunicationEntity): UpdateCommunicationOutput {
     return {
       id: communication.id,
       channel: communication.channel,
@@ -180,6 +278,19 @@ export class CommunicationService {
       createdByUserId: communication.createdByUserId,
       createdAt: communication.createdAt,
       updatedAt: communication.updatedAt,
+    };
+  }
+
+  private toAttachmentOutput(attachment: CommunicationAttachmentEntity): CommunicationAttachmentOutput {
+    return {
+      id: attachment.id,
+      communicationId: attachment.communicationId,
+      originalFileName: attachment.originalFileName,
+      storageProvider: attachment.storageProvider,
+      storageKey: attachment.storageKey,
+      mimeType: attachment.mimeType,
+      fileSizeBytes: attachment.fileSizeBytes,
+      createdAt: attachment.createdAt,
     };
   }
 }

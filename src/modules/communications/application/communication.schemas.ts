@@ -69,6 +69,12 @@ export const communicationIdSchema = z.object({
   id: z.uuid('Invalid UUID'),
 });
 
+export const communicationAttachmentIdSchema = z.object({
+  id: z.uuid('Invalid communication UUID'),
+  attachmentId: z.uuid('Invalid attachment UUID'),
+});
+
 export type CreateCommunicationSchemaInput = z.infer<typeof createCommunicationSchema>;
 export type UpdateCommunicationSchemaInput = z.infer<typeof updateCommunicationSchema>;
 export type CommunicationIdSchemaInput = z.infer<typeof communicationIdSchema>;
+export type CommunicationAttachmentIdSchemaInput = z.infer<typeof communicationAttachmentIdSchema>;
