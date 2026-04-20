@@ -21,6 +21,12 @@ const envSchema = z.object({
   JWT_SECRET_KEY: z.string().min(1, 'JWT_SECRET_KEY is required'),
   JWT_ACCESS_TOKEN_EXPIRES_IN: z.string().min(1, 'JWT_ACCESS_TOKEN_EXPIRES_IN is required'),
   JWT_REFRESH_TOKEN_EXPIRES_IN: z.string().min(1, 'JWT_REFRESH_TOKEN_EXPIRES_IN is required'),
+
+  // Cloudflare
+  CLOUDFLARE_ENDPOINT: z.string().min(1, 'CLOUDFLARE_ENDPOINT is required'),
+  CLOUDFLARE_BUCKET_NAME: z.string().min(1, 'CLOUDFLARE_BUCKET_NAME is required'),
+  CLOUDFLARE_ACCESS_KEY_ID: z.string().min(1, 'CLOUDFLARE_ACCESS_KEY_ID is required'),
+  CLOUDFLARE_SECRET_ACCESS_KEY: z.string().min(1, 'CLOUDFLARE_SECRET_ACCESS_KEY is required'),
 });
 
 const result = envSchema.safeParse(process.env);

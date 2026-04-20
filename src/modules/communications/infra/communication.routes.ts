@@ -15,7 +15,7 @@ import {
 import { CommunicationService } from '../application/communication.service';
 import { CommunicationController } from './communication.controller';
 import { CommunicationRepositoryPrisma } from './communication.repository.prisma';
-import { InMemoryFileStorage } from './file-storage.memory';
+import { R2FileStorage } from './file-storage.r2';
 
 const TEN_MEGABYTES = 10 * 1024 * 1024;
 
@@ -399,7 +399,7 @@ export const communicationRoutes = () => {
 
   const repository = new CommunicationRepositoryPrisma(prisma);
   const templateVersionRepository = new TemplateVersionRepositoryPrisma(prisma);
-  const fileStorage = new InMemoryFileStorage();
+  const fileStorage = new R2FileStorage();
 
   const service = new CommunicationService(repository, templateVersionRepository, fileStorage);
   const controller = new CommunicationController(service);
