@@ -7,6 +7,11 @@ const templateVariableValueSchema = z.union([z.string(), z.number(), z.boolean()
 
 export const templateVariablesJsonSchema = z.record(z.string(), templateVariableValueSchema).nullable();
 
+export const createRecipientSchema = z.object({
+  recipientType: z.enum(['to', 'cc', 'bcc']),
+  email: z.string().email(),
+});
+
 export const createCommunicationSchema = z
   .object({
     channel: z.enum(['email']),
@@ -16,8 +21,9 @@ export const createCommunicationSchema = z
     body: z.string().nullable().optional(),
     bodyType: z.enum(['text', 'html']).nullable().optional(),
     templateVersionId: z.string().nullable().optional(),
-    templateVariablesJson: templateVariablesJsonSchema.nullable().optional(),
+    templateVariablesJson: templateVariablesJsonSchema.optional(),
     scheduledAt: z.coerce.date().nullable().optional(),
+    recipients: z.array(createRecipientSchema).min(1, 'At least one recipient is required'),
   })
   .refine(
     (data) => {
@@ -74,7 +80,14 @@ export const communicationAttachmentIdSchema = z.object({
   attachmentId: z.uuid('Invalid attachment UUID'),
 });
 
+export const communicationRecipientIdSchema = z.object({
+  id: z.uuid('Invalid communication UUID'),
+  recipientId: z.uuid('Invalid recipient UUID'),
+});
+
 export type CreateCommunicationSchemaInput = z.infer<typeof createCommunicationSchema>;
 export type UpdateCommunicationSchemaInput = z.infer<typeof updateCommunicationSchema>;
+export type CreateRecipientSchemaInput = z.infer<typeof createRecipientSchema>;
 export type CommunicationIdSchemaInput = z.infer<typeof communicationIdSchema>;
 export type CommunicationAttachmentIdSchemaInput = z.infer<typeof communicationAttachmentIdSchema>;
+export type CommunicationRecipientIdSchemaInput = z.infer<typeof communicationRecipientIdSchema>;

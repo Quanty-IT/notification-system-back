@@ -2,8 +2,10 @@ import { PrismaClient } from '../../../../generated/prisma/client';
 import { CommunicationEntity } from '../domain/communication.entity';
 import { CommunicationRepository } from '../domain/communication.repository';
 import { CommunicationAttachmentEntity } from '../domain/communication-attachment.entity';
+import { CommunicationRecipientEntity } from '../domain/communication-recipient.entity';
 import { CommunicationMapper } from './communication.mapper';
 import { CommunicationAttachmentMapper } from './communication-attachment.mapper';
+import { CommunicationRecipientMapper } from './communication-recipient.mapper';
 
 export class CommunicationRepositoryPrisma implements CommunicationRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -67,6 +69,33 @@ export class CommunicationRepositoryPrisma implements CommunicationRepository {
   async deleteAttachment(attachmentId: string): Promise<void> {
     await this.prisma.communicationAttachment.delete({
       where: { id: attachmentId },
+    });
+  }
+
+  async createRecipient(recipient: CommunicationRecipientEntity): Promise<void> {
+    await this.prisma.communicationRecipient.create({
+      data: CommunicationRecipientMapper.toPersistence(recipient),
+    });
+  }
+
+  async findRecipientsByCommunicationId(communicationId: string): Promise<CommunicationRecipientEntity[]> {
+    const recipients = await this.prisma.communicationRecipient.findMany({
+      where: { communication_id: communicationId },
+      orderBy: { created_at: 'asc' },
+    });
+    return recipients.map(CommunicationRecipientMapper.toDomain);
+  }
+
+  async findRecipientById(recipientId: string): Promise<CommunicationRecipientEntity | null> {
+    const recipient = await this.prisma.communicationRecipient.findUnique({
+      where: { id: recipientId },
+    });
+    return recipient ? CommunicationRecipientMapper.toDomain(recipient) : null;
+  }
+
+  async deleteRecipient(recipientId: string): Promise<void> {
+    await this.prisma.communicationRecipient.delete({
+      where: { id: recipientId },
     });
   }
 }

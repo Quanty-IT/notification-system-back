@@ -1,5 +1,6 @@
 import { CommunicationEntity } from './communication.entity';
 import { CommunicationAttachmentEntity } from './communication-attachment.entity';
+import { CommunicationRecipientEntity } from './communication-recipient.entity';
 
 export interface CommunicationRepository {
   create(communication: CommunicationEntity): Promise<void>;
@@ -12,4 +13,9 @@ export interface CommunicationRepository {
   findAttachmentsByCommunicationId(communicationId: string): Promise<CommunicationAttachmentEntity[]>;
   findAttachmentById(attachmentId: string): Promise<CommunicationAttachmentEntity | null>;
   deleteAttachment(attachmentId: string): Promise<void>;
+
+  createRecipient(recipient: CommunicationRecipientEntity): Promise<void>;
+  findRecipientsByCommunicationId(communicationId: string): Promise<CommunicationRecipientEntity[]>;
+  findRecipientById(recipientId: string): Promise<CommunicationRecipientEntity | null>;
+  deleteRecipient(recipientId: string): Promise<void>;
 }

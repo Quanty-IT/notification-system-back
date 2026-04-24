@@ -71,6 +71,7 @@ model Communication {
   user                    User?            @relation(fields: [created_by_user_id], references: [id], onDelete: SetNull)
 
   attachments             CommunicationAttachment[]
+  recipients              CommunicationRecipient[]
 
   @@map("communications")
 }
@@ -89,4 +90,16 @@ model CommunicationAttachment {
 
   @@index([communication_id])
   @@map("communication_attachments")
+}
+
+model CommunicationRecipient {
+  id               String   @id @default(uuid())
+  communication_id String
+  recipient_type   String   @db.VarChar(10)
+  email            String   @db.VarChar(180)
+  created_at       DateTime @default(now())
+
+  communication Communication @relation(fields: [communication_id], references: [id], onDelete: Cascade)
+
+  @@map("communication_recipients")
 }

@@ -5,6 +5,14 @@ import { createCommunicationSchema, updateCommunicationSchema } from './communic
 export type CreateCommunicationInput = z.infer<typeof createCommunicationSchema>;
 export type UpdateCommunicationInput = z.infer<typeof updateCommunicationSchema>;
 
+export type CommunicationRecipientOutput = {
+  id: string;
+  communicationId: string;
+  recipientType: 'to' | 'cc' | 'bcc';
+  email: string;
+  createdAt: Date;
+};
+
 export type CommunicationAttachmentOutput = {
   id: string;
   communicationId: string;
@@ -43,6 +51,7 @@ export type UpdateCommunicationOutput = CommunicationOutput;
 
 export type GetCommunicationOutput = CommunicationOutput & {
   attachments: CommunicationAttachmentOutput[];
+  recipients: CommunicationRecipientOutput[];
 };
 
 export type FindCommunicationsOutput = {
@@ -51,4 +60,8 @@ export type FindCommunicationsOutput = {
 
 export type FindCommunicationAttachmentsOutput = {
   attachments: CommunicationAttachmentOutput[];
+};
+
+export type FindCommunicationRecipientsOutput = {
+  recipients: CommunicationRecipientOutput[];
 };
