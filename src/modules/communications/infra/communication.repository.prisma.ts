@@ -98,4 +98,16 @@ export class CommunicationRepositoryPrisma implements CommunicationRepository {
       where: { id: recipientId },
     });
   }
+
+  async findRecipientByEmailAndType(communicationId: string, email: string, recipientType: 'to' | 'cc' | 'bcc'): Promise<CommunicationRecipientEntity | null> {
+    const recipient = await this.prisma.communicationRecipient.findFirst({
+      where: {
+        communication_id: communicationId,
+        email: email.toLowerCase(),
+        recipient_type: recipientType,
+      },
+    });
+
+    return recipient ? CommunicationRecipientMapper.toDomain(recipient) : null;
+  }
 }

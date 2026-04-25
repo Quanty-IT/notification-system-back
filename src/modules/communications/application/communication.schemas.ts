@@ -21,7 +21,7 @@ export const createCommunicationSchema = z
     body: z.string().nullable().optional(),
     bodyType: z.enum(['text', 'html']).nullable().optional(),
     templateVersionId: z.string().nullable().optional(),
-    templateVariablesJson: templateVariablesJsonSchema.optional(),
+    templateVariablesJson: templateVariablesJsonSchema.nullable().optional(),
     scheduledAt: z.coerce.date().nullable().optional(),
     recipients: z.array(createRecipientSchema).min(1, 'At least one recipient is required'),
   })
@@ -59,6 +59,26 @@ export const createCommunicationSchema = z
     {
       message: 'templateVersionId and templateVariablesJson cannot be provided when sourceType is manual',
       path: ['templateVersionId'],
+    },
+  )
+  .refine(
+    (data) => {
+      const recipients = data.recipients;
+      const uniqueRecipients = new Set();
+      
+      for (const recipient of recipients) {
+        const key = `${recipient.email.toLowerCase()}_${recipient.recipientType}`;
+        if (uniqueRecipients.has(key)) {
+          return false;
+        }
+        uniqueRecipients.add(key);
+      }
+      
+      return true;
+    },
+    {
+      message: 'Duplicate recipients with the same email and recipientType are not allowed',
+      path: ['recipients'],
     },
   );
 

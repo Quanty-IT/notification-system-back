@@ -17,5 +17,6 @@ export interface CommunicationRepository {
   createRecipient(recipient: CommunicationRecipientEntity): Promise<void>;
   findRecipientsByCommunicationId(communicationId: string): Promise<CommunicationRecipientEntity[]>;
   findRecipientById(recipientId: string): Promise<CommunicationRecipientEntity | null>;
+  findRecipientByEmailAndType(communicationId: string, email: string, recipientType: 'to' | 'cc' | 'bcc'): Promise<CommunicationRecipientEntity | null>;
   deleteRecipient(recipientId: string): Promise<void>;
 }

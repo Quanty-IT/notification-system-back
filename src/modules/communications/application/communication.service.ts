@@ -81,8 +81,19 @@ export class CommunicationService {
 
     await this.repository.create(communication);
 
-    // Create recipients
     for (const recipientData of input.recipients) {
+      const existingRecipient = await this.repository.findRecipientByEmailAndType(
+        communication.id,
+        recipientData.email,
+        recipientData.recipientType
+      );
+
+      if (existingRecipient) {
+        throw new createHttpError.BadRequest(
+          `Recipient with email ${recipientData.email} and type ${recipientData.recipientType} already exists for this communication`
+        );
+      }
+
       const recipient = CommunicationRecipientEntity.create(
         communication.id,
         recipientData.recipientType,
@@ -290,6 +301,18 @@ export class CommunicationService {
 
     if (communication.status !== 'draft' && communication.status !== 'scheduled') {
       throw new createHttpError.BadRequest('Recipients can only be added to draft or scheduled communications');
+    }
+
+    const existingRecipient = await this.repository.findRecipientByEmailAndType(
+      communicationId,
+      input.email,
+      input.recipientType
+    );
+
+    if (existingRecipient) {
+      throw new createHttpError.BadRequest(
+        `Recipient with email ${input.email} and type ${input.recipientType} already exists for this communication`
+      );
     }
 
     const recipient = CommunicationRecipientEntity.create(communicationId, input.recipientType, input.email);
