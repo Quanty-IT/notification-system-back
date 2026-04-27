@@ -9,7 +9,9 @@ import { TemplateVersionRepositoryPrisma } from '@/modules/template-versions/inf
 import {
   communicationAttachmentIdSchema,
   communicationIdSchema,
+  communicationRecipientIdSchema,
   createCommunicationSchema,
+  createRecipientSchema,
   updateCommunicationSchema,
 } from '../application/communication.schemas';
 import { CommunicationService } from '../application/communication.service';
@@ -40,6 +42,18 @@ const communicationAttachmentResponseSchema = z.object({
   createdAt: z.string(),
 });
 
+const communicationRecipientResponseSchema = z.object({
+  id: z.uuid(),
+  communicationId: z.uuid(),
+  recipientType: z.enum(['to', 'cc', 'bcc']),
+  email: z.string(),
+  createdAt: z.string(),
+});
+
+const communicationRecipientListResponseSchema = z.object({
+  recipients: z.array(communicationRecipientResponseSchema),
+});
+
 const communicationAttachmentListResponseSchema = z.object({
   attachments: z.array(communicationAttachmentResponseSchema),
 });
@@ -60,6 +74,7 @@ const communicationResponseSchema = z.object({
   createdByUserId: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  recipients: z.array(communicationRecipientResponseSchema),
 });
 
 const communicationWithAttachmentsResponseSchema = communicationResponseSchema.extend({
@@ -160,6 +175,10 @@ registry.register('CommunicationWithAttachmentsResponse', communicationWithAttac
 registry.register('CommunicationListResponse', communicationListResponseSchema);
 registry.register('CommunicationAttachmentResponse', communicationAttachmentResponseSchema);
 registry.register('CommunicationAttachmentListResponse', communicationAttachmentListResponseSchema);
+registry.register('CreateRecipient', createRecipientSchema);
+registry.register('CommunicationRecipientId', communicationRecipientIdSchema);
+registry.register('CommunicationRecipientResponse', communicationRecipientResponseSchema);
+registry.register('CommunicationRecipientListResponse', communicationRecipientListResponseSchema);
 
 registry.registerPath({
   method: 'post',
@@ -184,6 +203,12 @@ registry.registerPath({
               name: 'João Silva',
             },
             scheduledAt: null,
+            recipients: [
+              {
+                recipientType: 'to',
+                email: 'joao@exemplo.com',
+              },
+            ],
           },
         },
       },
@@ -394,6 +419,98 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: 'post',
+  path: `${BASE_PATH}/{id}/recipients`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationIdSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: createRecipientSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Recipient added successfully',
+      content: {
+        'application/json': {
+          schema: { $ref: '#/components/schemas/CommunicationRecipientResponse' },
+        },
+      },
+    },
+    400: {
+      description: 'Bad request',
+    },
+    404: {
+      description: 'Communication not found',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: `${BASE_PATH}/{id}/recipients`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationIdSchema,
+  },
+  responses: {
+    200: {
+      description: 'Recipients retrieved successfully',
+      content: {
+        'application/json': {
+          schema: { $ref: '#/components/schemas/CommunicationRecipientListResponse' },
+        },
+      },
+    },
+    404: {
+      description: 'Communication not found',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'delete',
+  path: `${BASE_PATH}/{id}/recipients/{recipientId}`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationRecipientIdSchema,
+  },
+  responses: {
+    204: {
+      description: 'Recipient deleted successfully',
+    },
+    400: {
+      description: 'Bad request',
+    },
+    404: {
+      description: 'Communication or recipient not found',
+    },
+  },
+});
+
 export const communicationRoutes = () => {
   const router = Router();
 
@@ -413,6 +530,10 @@ export const communicationRoutes = () => {
   router.post('/:id/attachments', upload.single('file'), controller.addAttachment.bind(controller));
   router.get('/:id/attachments', controller.findAttachments.bind(controller));
   router.delete('/:id/attachments/:attachmentId', controller.removeAttachment.bind(controller));
+
+  router.post('/:id/recipients', controller.addRecipient.bind(controller));
+  router.get('/:id/recipients', controller.findRecipients.bind(controller));
+  router.delete('/:id/recipients/:recipientId', controller.removeRecipient.bind(controller));
 
   return router;
 };

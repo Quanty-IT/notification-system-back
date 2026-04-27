@@ -3,12 +3,15 @@ import { TemplateVersionRepository } from '@/modules/template-versions/domain/te
 import { CommunicationEntity } from '../domain/communication.entity';
 import { CommunicationRepository } from '../domain/communication.repository';
 import { CommunicationAttachmentEntity } from '../domain/communication-attachment.entity';
+import { CommunicationRecipientEntity } from '../domain/communication-recipient.entity';
 import { FileStorage } from '../domain/file-storage';
 import {
   CommunicationAttachmentOutput,
+  CommunicationRecipientOutput,
   CreateCommunicationInput,
   CreateCommunicationOutput,
   FindCommunicationAttachmentsOutput,
+  FindCommunicationRecipientsOutput,
   FindCommunicationsOutput,
   GetCommunicationOutput,
   UpdateCommunicationInput,
@@ -20,6 +23,11 @@ type AddAttachmentInput = {
   mimeType: string;
   fileSizeBytes: number;
   content: Buffer;
+};
+
+type AddRecipientInput = {
+  recipientType: 'to' | 'cc' | 'bcc';
+  email: string;
 };
 
 const TEN_MEGABYTES = 10 * 1024 * 1024;
@@ -73,6 +81,27 @@ export class CommunicationService {
 
     await this.repository.create(communication);
 
+    for (const recipientData of input.recipients) {
+      const existingRecipient = await this.repository.findRecipientByEmailAndType(
+        communication.id,
+        recipientData.email,
+        recipientData.recipientType
+      );
+
+      if (existingRecipient) {
+        throw new createHttpError.BadRequest(
+          `Recipient with email ${recipientData.email} and type ${recipientData.recipientType} already exists for this communication`
+        );
+      }
+
+      const recipient = CommunicationRecipientEntity.create(
+        communication.id,
+        recipientData.recipientType,
+        recipientData.email,
+      );
+      await this.repository.createRecipient(recipient);
+    }
+
     return this.toOutput(communication);
   }
 
@@ -92,10 +121,12 @@ export class CommunicationService {
     }
 
     const attachments = await this.repository.findAttachmentsByCommunicationId(id);
+    const recipients = await this.repository.findRecipientsByCommunicationId(id);
 
     return {
       ...this.toOutput(communication),
       attachments: attachments.map((attachment) => this.toAttachmentOutput(attachment)),
+      recipients: recipients.map((recipient) => this.toRecipientOutput(recipient)),
     };
   }
 
@@ -261,6 +292,70 @@ export class CommunicationService {
     await this.repository.deleteAttachment(attachmentId);
   }
 
+  async addRecipient(communicationId: string, input: AddRecipientInput): Promise<CommunicationRecipientOutput> {
+    const communication = await this.repository.findById(communicationId);
+
+    if (!communication) {
+      throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
+    }
+
+    if (communication.status !== 'draft' && communication.status !== 'scheduled') {
+      throw new createHttpError.BadRequest('Recipients can only be added to draft or scheduled communications');
+    }
+
+    const existingRecipient = await this.repository.findRecipientByEmailAndType(
+      communicationId,
+      input.email,
+      input.recipientType
+    );
+
+    if (existingRecipient) {
+      throw new createHttpError.BadRequest(
+        `Recipient with email ${input.email} and type ${input.recipientType} already exists for this communication`
+      );
+    }
+
+    const recipient = CommunicationRecipientEntity.create(communicationId, input.recipientType, input.email);
+
+    await this.repository.createRecipient(recipient);
+
+    return this.toRecipientOutput(recipient);
+  }
+
+  async removeRecipient(communicationId: string, recipientId: string): Promise<void> {
+    const communication = await this.repository.findById(communicationId);
+
+    if (!communication) {
+      throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
+    }
+
+    if (communication.status !== 'draft' && communication.status !== 'scheduled') {
+      throw new createHttpError.BadRequest('Recipients can only be removed from draft or scheduled communications');
+    }
+
+    const recipient = await this.repository.findRecipientById(recipientId);
+
+    if (!recipient || recipient.communicationId !== communicationId) {
+      throw new createHttpError.NotFound(`Recipient ${recipientId} not found for communication ${communicationId}`);
+    }
+
+    await this.repository.deleteRecipient(recipientId);
+  }
+
+  async findRecipientsByCommunicationId(communicationId: string): Promise<FindCommunicationRecipientsOutput> {
+    const communication = await this.repository.findById(communicationId);
+
+    if (!communication) {
+      throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
+    }
+
+    const recipients = await this.repository.findRecipientsByCommunicationId(communicationId);
+
+    return {
+      recipients: recipients.map((recipient) => this.toRecipientOutput(recipient)),
+    };
+  }
+
   private toOutput(communication: CommunicationEntity): UpdateCommunicationOutput {
     return {
       id: communication.id,
@@ -292,6 +387,16 @@ export class CommunicationService {
       mimeType: attachment.mimeType,
       fileSizeBytes: attachment.fileSizeBytes,
       createdAt: attachment.createdAt,
+    };
+  }
+
+  private toRecipientOutput(recipient: CommunicationRecipientEntity): CommunicationRecipientOutput {
+    return {
+      id: recipient.id,
+      communicationId: recipient.communicationId,
+      recipientType: recipient.recipientType,
+      email: recipient.email,
+      createdAt: recipient.createdAt,
     };
   }
 }
