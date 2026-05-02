@@ -7,23 +7,21 @@ export const createTemplateSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(3, 'Name must have at least 3 characters')
     .max(255, 'Name must have at most 255 characters')
     .transform((val) => val.trim().toLowerCase()),
 
-  description: z.string().max(500, 'Description must have at most 500 characters').nullable().optional(),
+  description: z.string().max(200, 'Description must have at most 200 characters').nullable().optional(),
 });
 
 export const updateTemplateSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(3, 'Name must have at least 3 characters')
     .max(255, 'Name must have at most 255 characters')
     .transform((val) => val.trim().toLowerCase())
     .optional(),
 
-  description: z.string().max(500, 'Description must have at most 500 characters').nullable().optional(),
+  description: z.string().max(200, 'Description must have at most 200 characters').nullable().optional(),
 });
 
 export const templateIdSchema = z.object({

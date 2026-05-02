@@ -32,8 +32,16 @@ export class TemplateService {
   async findAll(): Promise<FindAllTemplatesOutput> {
     const templates = await this.repository.findAll();
 
+    const templatesOrderedByStatusAndCreationDate = templates.sort((currentTemplate, nextTemplate) => {
+      if (currentTemplate.isActive !== nextTemplate.isActive) {
+        return currentTemplate.isActive ? -1 : 1;
+      }
+
+      return nextTemplate.createdAt.getTime() - currentTemplate.createdAt.getTime();
+    });
+
     return {
-      templates: templates.map((template) => this.toOutput(template)),
+      templates: templatesOrderedByStatusAndCreationDate.map((template) => this.toOutput(template)),
     };
   }
 
