@@ -11,9 +11,7 @@ export class CronJobs {
     this.communicationDispatchCron.start();
   }
 
-  public stop(): void {
-    // Stop all CRON jobs
-  }
+  public stop(): void {}
 }
 
 export const cronJobs = new CronJobs();

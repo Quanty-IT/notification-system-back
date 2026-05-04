@@ -34,12 +34,8 @@ export class CommunicationDispatchCron {
         try {
           await this.communicationService.processDispatch(dispatch.id);
           await new Promise((resolve) => setTimeout(resolve, 1000));
-        } catch (_error) {
-          // Continue processing other dispatches
-        }
+        } catch (_error) {}
       }
-    } catch (_error) {
-      // Handle general error
-    }
+    } catch (_error) {}
   }
 }
