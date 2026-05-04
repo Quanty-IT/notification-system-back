@@ -3,16 +3,20 @@ import { TemplateVersionRepository } from '@/modules/template-versions/domain/te
 import { CommunicationEntity } from '../domain/communication.entity';
 import { CommunicationRepository } from '../domain/communication.repository';
 import { CommunicationAttachmentEntity } from '../domain/communication-attachment.entity';
+import { CommunicationDispatchEntity } from '../domain/communication-dispatch.entity';
 import { CommunicationRecipientEntity } from '../domain/communication-recipient.entity';
 import { FileStorage } from '../domain/file-storage';
 import {
   CommunicationAttachmentOutput,
+  CommunicationDispatchOutput,
   CommunicationRecipientOutput,
   CreateCommunicationInput,
   CreateCommunicationOutput,
   FindCommunicationAttachmentsOutput,
+  FindCommunicationDispatchesOutput,
   FindCommunicationRecipientsOutput,
   FindCommunicationsOutput,
+  FindPendingDispatchesOutput,
   GetCommunicationOutput,
   UpdateCommunicationInput,
   UpdateCommunicationOutput,
@@ -85,12 +89,12 @@ export class CommunicationService {
       const existingRecipient = await this.repository.findRecipientByEmailAndType(
         communication.id,
         recipientData.email,
-        recipientData.recipientType
+        recipientData.recipientType,
       );
 
       if (existingRecipient) {
         throw new createHttpError.BadRequest(
-          `Recipient with email ${recipientData.email} and type ${recipientData.recipientType} already exists for this communication`
+          `Recipient with email ${recipientData.email} and type ${recipientData.recipientType} already exists for this communication`,
         );
       }
 
@@ -122,11 +126,13 @@ export class CommunicationService {
 
     const attachments = await this.repository.findAttachmentsByCommunicationId(id);
     const recipients = await this.repository.findRecipientsByCommunicationId(id);
+    const dispatches = await this.repository.findDispatchesByCommunicationId(id);
 
     return {
       ...this.toOutput(communication),
       attachments: attachments.map((attachment) => this.toAttachmentOutput(attachment)),
       recipients: recipients.map((recipient) => this.toRecipientOutput(recipient)),
+      dispatches: dispatches.map((dispatch) => this.toDispatchOutput(dispatch)),
     };
   }
 
@@ -306,12 +312,12 @@ export class CommunicationService {
     const existingRecipient = await this.repository.findRecipientByEmailAndType(
       communicationId,
       input.email,
-      input.recipientType
+      input.recipientType,
     );
 
     if (existingRecipient) {
       throw new createHttpError.BadRequest(
-        `Recipient with email ${input.email} and type ${input.recipientType} already exists for this communication`
+        `Recipient with email ${input.email} and type ${input.recipientType} already exists for this communication`,
       );
     }
 
@@ -398,5 +404,138 @@ export class CommunicationService {
       email: recipient.email,
       createdAt: recipient.createdAt,
     };
+  }
+
+  private toDispatchOutput(dispatch: CommunicationDispatchEntity): CommunicationDispatchOutput {
+    return {
+      id: dispatch.id,
+      communicationId: dispatch.communicationId,
+      attemptNumber: dispatch.attemptNumber,
+      provider: dispatch.provider,
+      status: dispatch.status,
+      startedAt: dispatch.startedAt,
+      finishedAt: dispatch.finishedAt,
+    };
+  }
+
+  async createInitialDispatch(communicationId: string): Promise<void> {
+    const communication = await this.repository.findById(communicationId);
+    if (!communication) {
+      throw createHttpError.NotFound(`Communication ${communicationId} not found`);
+    }
+
+    const existingDispatch = await this.repository.findLastDispatchByCommunicationId(communicationId);
+    if (existingDispatch?.isProcessing()) {
+      throw createHttpError.BadRequest('Communication already has a dispatch in progress');
+    }
+
+    const dispatch = CommunicationDispatchEntity.create(communicationId);
+    await this.repository.createDispatch(dispatch);
+  }
+
+  async processDispatch(dispatchId: string): Promise<void> {
+    const dispatch = await this.repository.findDispatchById(dispatchId);
+    if (!dispatch) {
+      throw createHttpError.NotFound(`Dispatch ${dispatchId} not found`);
+    }
+
+    if (!dispatch.isProcessing()) {
+      throw createHttpError.BadRequest('Dispatch is not in processing status');
+    }
+
+    try {
+      await this.sendEmail(dispatch);
+
+      dispatch.markAsSent();
+      await this.repository.updateDispatch(dispatch);
+    } catch (_error) {
+      dispatch.markAsFailed();
+      await this.repository.updateDispatch(dispatch);
+
+      await this.handleRetry(dispatch);
+    }
+  }
+
+  async createDispatchWithNewProvider(
+    communicationId: string,
+    provider: 'smtp' | 'nodemailer' | 'twilio',
+  ): Promise<void> {
+    const communication = await this.repository.findById(communicationId);
+    if (!communication) {
+      throw createHttpError.NotFound(`Communication ${communicationId} not found`);
+    }
+
+    const lastDispatch = await this.repository.findLastDispatchByCommunicationId(communicationId);
+    if (!lastDispatch?.needsNewProvider()) {
+      throw createHttpError.BadRequest('Cannot create dispatch with new provider');
+    }
+
+    const newDispatch = CommunicationDispatchEntity.createWithNewProvider(communicationId, provider);
+    await this.repository.createDispatch(newDispatch);
+  }
+
+  async getPendingDispatches(): Promise<FindPendingDispatchesOutput> {
+    const dispatches = await this.repository.findPendingDispatches();
+
+    return {
+      dispatches: dispatches.map((dispatch) => this.toDispatchOutput(dispatch)),
+    };
+  }
+
+  async getDispatchesByCommunicationId(communicationId: string): Promise<FindCommunicationDispatchesOutput> {
+    const communication = await this.repository.findById(communicationId);
+    if (!communication) {
+      throw createHttpError.NotFound(`Communication ${communicationId} not found`);
+    }
+
+    const dispatches = await this.repository.findDispatchesByCommunicationId(communicationId);
+
+    return {
+      dispatches: dispatches.map((dispatch) => this.toDispatchOutput(dispatch)),
+    };
+  }
+
+  async getDispatchById(dispatchId: string): Promise<CommunicationDispatchOutput> {
+    const dispatch = await this.repository.findDispatchById(dispatchId);
+    if (!dispatch) {
+      throw createHttpError.NotFound(`Dispatch ${dispatchId} not found`);
+    }
+
+    return this.toDispatchOutput(dispatch);
+  }
+
+  private async handleRetry(dispatch: CommunicationDispatchEntity): Promise<void> {
+    if (dispatch.canIncrementAttempt()) {
+      dispatch.incrementAttempt();
+      await this.repository.updateDispatch(dispatch);
+    } else if (dispatch.needsNewProvider()) {
+      const nextProvider = this.getNextProvider(dispatch.provider);
+      if (nextProvider) {
+        const newDispatch = CommunicationDispatchEntity.createWithNewProvider(dispatch.communicationId, nextProvider);
+        await this.repository.createDispatch(newDispatch);
+      }
+    }
+  }
+
+  private getNextProvider(currentProvider: 'smtp' | 'nodemailer' | 'twilio'): 'smtp' | 'nodemailer' | 'twilio' | null {
+    const providers: ('smtp' | 'nodemailer' | 'twilio')[] = ['smtp', 'nodemailer', 'twilio'];
+    const currentIndex = providers.indexOf(currentProvider);
+
+    if (currentIndex < providers.length - 1) {
+      const nextProvider = providers[currentIndex + 1];
+      return nextProvider ?? null;
+    }
+
+    return null;
+  }
+
+  private async sendEmail(dispatch: CommunicationDispatchEntity): Promise<void> {
+    if (dispatch.provider === 'smtp') {
+      // SMTP
+    } else if (dispatch.provider === 'nodemailer') {
+      // Nodemailer
+    } else if (dispatch.provider === 'twilio') {
+      // Twilio
+    }
   }
 }

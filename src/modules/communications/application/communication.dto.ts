@@ -25,6 +25,16 @@ export type CommunicationAttachmentOutput = {
   createdAt: Date;
 };
 
+export type CommunicationDispatchOutput = {
+  id: string;
+  communicationId: string;
+  attemptNumber: number;
+  provider: 'smtp' | 'nodemailer' | 'twilio';
+  status: 'processing' | 'sent' | 'failed';
+  startedAt: Date;
+  finishedAt: Date | null;
+};
+
 export type CommunicationOutput = {
   id: string;
   channel: 'email';
@@ -52,6 +62,7 @@ export type UpdateCommunicationOutput = CommunicationOutput;
 export type GetCommunicationOutput = CommunicationOutput & {
   attachments: CommunicationAttachmentOutput[];
   recipients: CommunicationRecipientOutput[];
+  dispatches: CommunicationDispatchOutput[];
 };
 
 export type FindCommunicationsOutput = {
@@ -64,4 +75,12 @@ export type FindCommunicationAttachmentsOutput = {
 
 export type FindCommunicationRecipientsOutput = {
   recipients: CommunicationRecipientOutput[];
+};
+
+export type FindCommunicationDispatchesOutput = {
+  dispatches: CommunicationDispatchOutput[];
+};
+
+export type FindPendingDispatchesOutput = {
+  dispatches: CommunicationDispatchOutput[];
 };

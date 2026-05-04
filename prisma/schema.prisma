@@ -72,6 +72,7 @@ model Communication {
 
   attachments             CommunicationAttachment[]
   recipients              CommunicationRecipient[]
+  dispatches              CommunicationDispatch[]
 
   @@map("communications")
 }
@@ -102,4 +103,19 @@ model CommunicationRecipient {
   communication Communication @relation(fields: [communication_id], references: [id], onDelete: Cascade)
 
   @@map("communication_recipients")
+}
+
+model CommunicationDispatch {
+  id String @id @default(uuid())
+  communication_id String
+  attempt_number Int
+  provider String @db.VarChar(50)
+  status String @db.VarChar(20)
+  started_at DateTime
+  finished_at DateTime?
+
+  communication Communication @relation(fields: [communication_id], references: [id], onDelete: Cascade)
+
+  @@index([communication_id, attempt_number])
+  @@map("communication_dispatches")
 }

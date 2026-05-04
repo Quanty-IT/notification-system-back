@@ -2,7 +2,9 @@ import { PrismaClient } from '../../../../generated/prisma/client';
 import { CommunicationEntity } from '../domain/communication.entity';
 import { CommunicationRepository } from '../domain/communication.repository';
 import { CommunicationAttachmentEntity } from '../domain/communication-attachment.entity';
+import { CommunicationDispatchEntity } from '../domain/communication-dispatch.entity';
 import { CommunicationRecipientEntity } from '../domain/communication-recipient.entity';
+import { CommunicationDispatchMapper } from '../infra/communication-dispatch.mapper';
 import { CommunicationMapper } from './communication.mapper';
 import { CommunicationAttachmentMapper } from './communication-attachment.mapper';
 import { CommunicationRecipientMapper } from './communication-recipient.mapper';
@@ -99,7 +101,11 @@ export class CommunicationRepositoryPrisma implements CommunicationRepository {
     });
   }
 
-  async findRecipientByEmailAndType(communicationId: string, email: string, recipientType: 'to' | 'cc' | 'bcc'): Promise<CommunicationRecipientEntity | null> {
+  async findRecipientByEmailAndType(
+    communicationId: string,
+    email: string,
+    recipientType: 'to' | 'cc' | 'bcc',
+  ): Promise<CommunicationRecipientEntity | null> {
     const recipient = await this.prisma.communicationRecipient.findFirst({
       where: {
         communication_id: communicationId,
@@ -109,5 +115,53 @@ export class CommunicationRepositoryPrisma implements CommunicationRepository {
     });
 
     return recipient ? CommunicationRecipientMapper.toDomain(recipient) : null;
+  }
+
+  async createDispatch(dispatch: CommunicationDispatchEntity): Promise<void> {
+    await this.prisma.communicationDispatch.create({
+      data: CommunicationDispatchMapper.toPersistence(dispatch),
+    });
+  }
+
+  async findDispatchesByCommunicationId(communicationId: string): Promise<CommunicationDispatchEntity[]> {
+    const dispatches = await this.prisma.communicationDispatch.findMany({
+      where: { communication_id: communicationId },
+      orderBy: { started_at: 'asc' },
+    });
+
+    return dispatches.map(CommunicationDispatchMapper.toDomain);
+  }
+
+  async findDispatchById(dispatchId: string): Promise<CommunicationDispatchEntity | null> {
+    const dispatch = await this.prisma.communicationDispatch.findUnique({
+      where: { id: dispatchId },
+    });
+
+    return dispatch ? CommunicationDispatchMapper.toDomain(dispatch) : null;
+  }
+
+  async updateDispatch(dispatch: CommunicationDispatchEntity): Promise<void> {
+    await this.prisma.communicationDispatch.update({
+      where: { id: dispatch.id },
+      data: CommunicationDispatchMapper.toPersistence(dispatch),
+    });
+  }
+
+  async findPendingDispatches(): Promise<CommunicationDispatchEntity[]> {
+    const dispatches = await this.prisma.communicationDispatch.findMany({
+      where: { status: 'processing' },
+      orderBy: { started_at: 'asc' },
+    });
+
+    return dispatches.map(CommunicationDispatchMapper.toDomain);
+  }
+
+  async findLastDispatchByCommunicationId(communicationId: string): Promise<CommunicationDispatchEntity | null> {
+    const dispatch = await this.prisma.communicationDispatch.findFirst({
+      where: { communication_id: communicationId },
+      orderBy: { started_at: 'desc' },
+    });
+
+    return dispatch ? CommunicationDispatchMapper.toDomain(dispatch) : null;
   }
 }

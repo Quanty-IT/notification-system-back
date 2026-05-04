@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import {
   communicationAttachmentIdSchema,
+  communicationDispatchIdSchema,
   communicationIdSchema,
   communicationRecipientIdSchema,
   createCommunicationSchema,
@@ -113,5 +114,43 @@ export class CommunicationController {
     await this.service.removeRecipient(id, recipientId);
 
     return response.status(204).send();
+  }
+
+  public async createInitialDispatch(request: Request<{ id: string }>, response: Response) {
+    const { id } = communicationIdSchema.parse(request.params);
+
+    await this.service.createInitialDispatch(id);
+
+    return response.status(201).send();
+  }
+
+  public async findDispatches(request: Request<{ id: string }>, response: Response) {
+    const { id } = communicationIdSchema.parse(request.params);
+
+    const output = await this.service.getDispatchesByCommunicationId(id);
+
+    return response.status(200).json(output);
+  }
+
+  public async findDispatchById(request: Request<{ id: string; dispatchId: string }>, response: Response) {
+    const { dispatchId } = communicationDispatchIdSchema.parse(request.params);
+
+    const output = await this.service.getDispatchById(dispatchId);
+
+    return response.status(200).json(output);
+  }
+
+  public async processDispatch(request: Request<{ id: string; dispatchId: string }>, response: Response) {
+    const { dispatchId } = communicationDispatchIdSchema.parse(request.params);
+
+    await this.service.processDispatch(dispatchId);
+
+    return response.status(204).send();
+  }
+
+  public async findPendingDispatches(_request: Request, response: Response) {
+    const output = await this.service.getPendingDispatches();
+
+    return response.status(200).json(output);
   }
 }

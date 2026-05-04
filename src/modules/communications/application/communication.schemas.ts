@@ -65,7 +65,7 @@ export const createCommunicationSchema = z
     (data) => {
       const recipients = data.recipients;
       const uniqueRecipients = new Set();
-      
+
       for (const recipient of recipients) {
         const key = `${recipient.email.toLowerCase()}_${recipient.recipientType}`;
         if (uniqueRecipients.has(key)) {
@@ -73,7 +73,7 @@ export const createCommunicationSchema = z
         }
         uniqueRecipients.add(key);
       }
-      
+
       return true;
     },
     {
@@ -105,9 +105,15 @@ export const communicationRecipientIdSchema = z.object({
   recipientId: z.uuid('Invalid recipient UUID'),
 });
 
+export const communicationDispatchIdSchema = z.object({
+  id: z.uuid('Invalid communication UUID'),
+  dispatchId: z.uuid('Invalid dispatch UUID'),
+});
+
 export type CreateCommunicationSchemaInput = z.infer<typeof createCommunicationSchema>;
 export type UpdateCommunicationSchemaInput = z.infer<typeof updateCommunicationSchema>;
 export type CreateRecipientSchemaInput = z.infer<typeof createRecipientSchema>;
 export type CommunicationIdSchemaInput = z.infer<typeof communicationIdSchema>;
 export type CommunicationAttachmentIdSchemaInput = z.infer<typeof communicationAttachmentIdSchema>;
 export type CommunicationRecipientIdSchemaInput = z.infer<typeof communicationRecipientIdSchema>;
+export type CommunicationDispatchIdSchemaInput = z.infer<typeof communicationDispatchIdSchema>;

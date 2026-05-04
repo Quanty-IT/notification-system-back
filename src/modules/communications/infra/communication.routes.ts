@@ -8,6 +8,7 @@ import { TemplateVersionRepositoryPrisma } from '@/modules/template-versions/inf
 
 import {
   communicationAttachmentIdSchema,
+  communicationDispatchIdSchema,
   communicationIdSchema,
   communicationRecipientIdSchema,
   createCommunicationSchema,
@@ -56,6 +57,20 @@ const communicationRecipientListResponseSchema = z.object({
 
 const communicationAttachmentListResponseSchema = z.object({
   attachments: z.array(communicationAttachmentResponseSchema),
+});
+
+const communicationDispatchResponseSchema = z.object({
+  id: z.uuid(),
+  communicationId: z.uuid(),
+  attemptNumber: z.number(),
+  provider: z.enum(['smtp', 'nodemailer', 'twilio']),
+  status: z.enum(['processing', 'sent', 'failed']),
+  startedAt: z.string(),
+  finishedAt: z.string().nullable(),
+});
+
+const communicationDispatchListResponseSchema = z.object({
+  dispatches: z.array(communicationDispatchResponseSchema),
 });
 
 const communicationResponseSchema = z.object({
@@ -166,6 +181,30 @@ const communicationAttachmentListResponseExample = {
   ],
 };
 
+const communicationDispatchResponseExample = {
+  id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+  communicationId: '9a4dcf08-1060-4c48-bf13-e2e8498e7fca',
+  attemptNumber: 1,
+  provider: 'smtp',
+  status: 'processing',
+  startedAt: '2026-04-28T15:30:00.000Z',
+  finishedAt: null,
+};
+
+const communicationDispatchListResponseExample = {
+  dispatches: [
+    communicationDispatchResponseExample,
+    {
+      ...communicationDispatchResponseExample,
+      id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      attemptNumber: 2,
+      provider: 'nodemailer',
+      status: 'failed',
+      finishedAt: '2026-04-28T15:32:15.000Z',
+    },
+  ],
+};
+
 registry.register('CreateCommunication', createCommunicationSchema);
 registry.register('UpdateCommunication', updateCommunicationSchema);
 registry.register('CommunicationId', communicationIdSchema);
@@ -179,6 +218,9 @@ registry.register('CreateRecipient', createRecipientSchema);
 registry.register('CommunicationRecipientId', communicationRecipientIdSchema);
 registry.register('CommunicationRecipientResponse', communicationRecipientResponseSchema);
 registry.register('CommunicationRecipientListResponse', communicationRecipientListResponseSchema);
+registry.register('CommunicationDispatchId', communicationDispatchIdSchema);
+registry.register('CommunicationDispatchResponse', communicationDispatchResponseSchema);
+registry.register('CommunicationDispatchListResponse', communicationDispatchListResponseSchema);
 
 registry.registerPath({
   method: 'post',
@@ -511,6 +553,139 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: 'post',
+  path: `${BASE_PATH}/{id}/dispatches`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationIdSchema,
+  },
+  responses: {
+    201: {
+      description: 'Dispatch created successfully',
+    },
+    404: {
+      description: 'Communication not found',
+    },
+    400: {
+      description: 'Bad request',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: `${BASE_PATH}/{id}/dispatches`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationIdSchema,
+  },
+  responses: {
+    200: {
+      description: 'Dispatches retrieved successfully',
+      content: {
+        'application/json': {
+          schema: communicationDispatchListResponseSchema,
+          example: communicationDispatchListResponseExample,
+        },
+      },
+    },
+    404: {
+      description: 'Communication not found',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: `${BASE_PATH}/{id}/dispatches/{dispatchId}`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationDispatchIdSchema,
+  },
+  responses: {
+    200: {
+      description: 'Dispatch retrieved successfully',
+      content: {
+        'application/json': {
+          schema: communicationDispatchResponseSchema,
+          example: communicationDispatchResponseExample,
+        },
+      },
+    },
+    404: {
+      description: 'Dispatch not found',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: `${BASE_PATH}/{id}/dispatches/{dispatchId}/process`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationDispatchIdSchema,
+  },
+  responses: {
+    204: {
+      description: 'Dispatch processed successfully',
+    },
+    404: {
+      description: 'Dispatch not found',
+    },
+    400: {
+      description: 'Bad request',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: `${BASE_PATH}/dispatches/pending`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  responses: {
+    200: {
+      description: 'Pending dispatches retrieved successfully',
+      content: {
+        'application/json': {
+          schema: communicationDispatchListResponseSchema,
+          example: communicationDispatchListResponseExample,
+        },
+      },
+    },
+  },
+});
+
 export const communicationRoutes = () => {
   const router = Router();
 
@@ -534,6 +709,12 @@ export const communicationRoutes = () => {
   router.post('/:id/recipients', controller.addRecipient.bind(controller));
   router.get('/:id/recipients', controller.findRecipients.bind(controller));
   router.delete('/:id/recipients/:recipientId', controller.removeRecipient.bind(controller));
+
+  router.post('/:id/dispatches', controller.createInitialDispatch.bind(controller));
+  router.get('/:id/dispatches', controller.findDispatches.bind(controller));
+  router.get('/:id/dispatches/:dispatchId', controller.findDispatchById.bind(controller));
+  router.post('/:id/dispatches/:dispatchId/process', controller.processDispatch.bind(controller));
+  router.get('/dispatches/pending', controller.findPendingDispatches.bind(controller));
 
   return router;
 };
