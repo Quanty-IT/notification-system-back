@@ -1,5 +1,5 @@
-import { CommunicationAttachment as PrismaCommunicationAttachment } from '../../../../generated/prisma/client';
-import { CommunicationAttachmentEntity } from '../domain/communication-attachment.entity';
+import { CommunicationAttachment as PrismaCommunicationAttachment } from '../../../../../generated/prisma/client';
+import { CommunicationAttachmentEntity } from '../../domain/communication-attachment.entity';
 
 export class CommunicationAttachmentMapper {
   static toDomain(attachment: PrismaCommunicationAttachment): CommunicationAttachmentEntity {

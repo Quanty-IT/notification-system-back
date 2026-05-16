@@ -4,10 +4,12 @@ import { CommunicationRepository } from '../domain/communication.repository';
 import { CommunicationAttachmentEntity } from '../domain/communication-attachment.entity';
 import { CommunicationDispatchEntity } from '../domain/communication-dispatch.entity';
 import { CommunicationRecipientEntity } from '../domain/communication-recipient.entity';
-import { CommunicationDispatchMapper } from '../infra/communication-dispatch.mapper';
-import { CommunicationMapper } from './communication.mapper';
-import { CommunicationAttachmentMapper } from './communication-attachment.mapper';
-import { CommunicationRecipientMapper } from './communication-recipient.mapper';
+import {
+  CommunicationAttachmentMapper,
+  CommunicationDispatchMapper,
+  CommunicationMapper,
+  CommunicationRecipientMapper,
+} from './mappers';
 
 export class CommunicationRepositoryPrisma implements CommunicationRepository {
   constructor(private readonly prisma: PrismaClient) {}
