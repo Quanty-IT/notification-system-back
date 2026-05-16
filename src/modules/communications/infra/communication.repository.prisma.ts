@@ -1,9 +1,11 @@
 import { PrismaClient } from '../../../../generated/prisma/client';
-import { CommunicationEntity } from '../domain/communication.entity';
 import { CommunicationRepository } from '../domain/communication.repository';
-import { CommunicationAttachmentEntity } from '../domain/communication-attachment.entity';
-import { CommunicationDispatchEntity } from '../domain/communication-dispatch.entity';
-import { CommunicationRecipientEntity } from '../domain/communication-recipient.entity';
+import {
+  CommunicationAttachmentEntity,
+  CommunicationDispatchEntity,
+  CommunicationEntity,
+  CommunicationRecipientEntity,
+} from '../domain/entities';
 import {
   CommunicationAttachmentMapper,
   CommunicationDispatchMapper,

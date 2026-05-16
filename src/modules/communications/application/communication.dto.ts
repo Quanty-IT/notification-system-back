@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TemplateVariableValue } from '../domain/communication.entity';
+import { TemplateVariableValue } from '../domain/entities';
 import { createCommunicationSchema, updateCommunicationSchema } from './communication.schemas';
 
 export type CreateCommunicationInput = z.infer<typeof createCommunicationSchema>;

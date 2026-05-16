@@ -1,5 +1,5 @@
 import { CommunicationDispatch as PrismaCommunicationDispatch } from '../../../../../generated/prisma/client';
-import { CommunicationDispatchEntity } from '../../domain/communication-dispatch.entity';
+import { CommunicationDispatchEntity } from '../../domain/entities/communication-dispatch.entity';
 
 export class CommunicationDispatchMapper {
   static toDomain(dispatch: PrismaCommunicationDispatch): CommunicationDispatchEntity {

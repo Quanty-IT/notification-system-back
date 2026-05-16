@@ -1,6 +1,5 @@
 import { Prisma, Communication as PrismaCommunication } from '../../../../../generated/prisma/client';
-
-import { CommunicationEntity, TemplateVariableValue } from '../../domain/communication.entity';
+import { CommunicationEntity, TemplateVariableValue } from '../../domain/entities';
 
 export class CommunicationMapper {
   static toDomain(communication: PrismaCommunication): CommunicationEntity {

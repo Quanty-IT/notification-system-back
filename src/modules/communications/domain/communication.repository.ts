@@ -1,7 +1,9 @@
-import { CommunicationEntity } from './communication.entity';
-import { CommunicationAttachmentEntity } from './communication-attachment.entity';
-import { CommunicationDispatchEntity } from './communication-dispatch.entity';
-import { CommunicationRecipientEntity } from './communication-recipient.entity';
+import {
+  CommunicationAttachmentEntity,
+  CommunicationDispatchEntity,
+  CommunicationEntity,
+  CommunicationRecipientEntity,
+} from './entities';
 
 export interface CommunicationRepository {
   create(communication: CommunicationEntity): Promise<void>;
