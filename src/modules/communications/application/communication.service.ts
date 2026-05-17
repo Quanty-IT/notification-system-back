@@ -1,8 +1,9 @@
-import { TemplateVersionRepository } from '@/modules/template-versions/domain/template-version.repository';
 import createHttpError from 'http-errors';
+import { TemplateVersionRepository } from '@/modules/template-versions/domain/template-version.repository';
+import { renderTemplate } from '@/shared';
 import { COMMUNICATION_SOURCE_TYPES, COMMUNICATION_STATUSES } from '../domain/communication.constants';
 import { CommunicationRepository } from '../domain/communication.repository';
-import { EMAIL_PROVIDERS, EmailProviderName } from '../domain/email-provider';
+import { EMAIL_PROVIDERS, EmailProvider, EmailProviderName, SendEmailInput } from '../domain/email-provider';
 import {
   CommunicationAttachmentEntity,
   CommunicationDispatchEntity,
@@ -44,6 +45,7 @@ export class CommunicationService {
   constructor(
     private readonly repository: CommunicationRepository,
     private readonly templateVersionRepository: TemplateVersionRepository,
+    private readonly resendEmailProvider: EmailProvider,
     private readonly fileStorage: FileStorage,
   ) {}
 
@@ -558,10 +560,52 @@ export class CommunicationService {
   }
 
   private async sendEmail(dispatch: CommunicationDispatchEntity): Promise<void> {
-    if (dispatch.provider === EMAIL_PROVIDERS.RESEND) {
-      // Resend
-    } else if (dispatch.provider === EMAIL_PROVIDERS.NODEMAILER) {
-      // Nodemailer
+    const communication = await this.repository.findById(dispatch.communicationId);
+    if (!communication) {
+      throw createHttpError.NotFound(`Communication ${dispatch.communicationId} not found`);
     }
+
+    const recipients = await this.repository.findRecipientsByCommunicationId(communication.id);
+
+    const to = recipients.filter((recipient) => recipient.recipientType === 'to').map((recipient) => recipient.email);
+    const cc = recipients.filter((recipient) => recipient.recipientType === 'cc').map((recipient) => recipient.email);
+    const bcc = recipients.filter((recipient) => recipient.recipientType === 'bcc').map((recipient) => recipient.email);
+
+    let subject = communication.subject;
+    let body = communication.body;
+
+    if (communication.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
+      if (!communication.templateVersionId) {
+        throw createHttpError.BadRequest('Template version ID is required');
+      }
+
+      const templateVersion = await this.templateVersionRepository.findById(communication.templateVersionId);
+
+      if (!templateVersion) {
+        throw createHttpError.NotFound(`Template version ${communication.templateVersionId} not found`);
+      }
+
+      subject = renderTemplate(templateVersion.subject, communication.templateVariablesJson ?? {});
+      body = renderTemplate(templateVersion.body, communication.templateVariablesJson ?? {});
+    }
+
+    if (!subject || !body) {
+      throw createHttpError.BadRequest('Communication content is incomplete');
+    }
+
+    if (dispatch.provider === EMAIL_PROVIDERS.RESEND) {
+      const emailInput: SendEmailInput = {
+        from: process.env.RESEND_FROM_EMAIL ?? '',
+        to,
+        subject,
+        html: body,
+        ...(cc.length > 0 ? { cc } : {}),
+        ...(bcc.length > 0 ? { bcc } : {}),
+      };
+
+      return await this.resendEmailProvider.send(emailInput);
+    }
+
+    throw createHttpError.BadRequest(`Unsupported email provider: ${dispatch.provider}`);
   }
 }

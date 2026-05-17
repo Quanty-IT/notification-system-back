@@ -28,6 +28,10 @@ const envSchema = z.object({
   CLOUDFLARE_BUCKET_NAME: z.string().min(1, 'CLOUDFLARE_BUCKET_NAME is required'),
   CLOUDFLARE_ACCESS_KEY_ID: z.string().min(1, 'CLOUDFLARE_ACCESS_KEY_ID is required'),
   CLOUDFLARE_SECRET_ACCESS_KEY: z.string().min(1, 'CLOUDFLARE_SECRET_ACCESS_KEY is required'),
+
+  // Resend
+  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
+  RESEND_FROM_EMAIL: z.string().min(1, 'RESEND_FROM_EMAIL is required'),
 });
 
 const result = envSchema.safeParse(process.env);

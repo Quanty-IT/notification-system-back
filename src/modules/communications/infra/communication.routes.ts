@@ -26,6 +26,7 @@ import { EMAIL_PROVIDERS } from '../domain/email-provider';
 import { CommunicationController } from './communication.controller';
 import { CommunicationRepositoryPrisma } from './communication.repository.prisma';
 import { R2FileStorage } from './file-storage.r2';
+import { ResendEmailProvider } from './providers/resend-email.provider';
 
 const TEN_MEGABYTES = 10 * 1024 * 1024;
 
@@ -682,9 +683,10 @@ export const communicationRoutes = () => {
 
   const repository = new CommunicationRepositoryPrisma(prisma);
   const templateVersionRepository = new TemplateVersionRepositoryPrisma(prisma);
+  const resendEmailProvider = new ResendEmailProvider();
   const fileStorage = new R2FileStorage();
 
-  const service = new CommunicationService(repository, templateVersionRepository, fileStorage);
+  const service = new CommunicationService(repository, templateVersionRepository, resendEmailProvider, fileStorage);
   const controller = new CommunicationController(service);
 
   router.post('/', controller.create.bind(controller));
