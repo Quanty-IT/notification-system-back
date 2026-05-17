@@ -40,7 +40,6 @@ export class TemplateVersionController {
     const input = updateTemplateVersionSchema.parse({
       subject: request.body.subject,
       body: request.body.body,
-      bodyType: request.body.bodyType,
       variablesSchemaJson: request.body.variablesSchemaJson,
     });
 

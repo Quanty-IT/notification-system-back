@@ -10,14 +10,12 @@ export const createTemplateVersionSchema = z.object({
   templateId: z.uuid('Invalid UUID'),
   subject: z.string().min(1, 'Subject is required').max(255, 'Subject must have at most 255 characters'),
   body: z.string().min(1, 'Body is required'),
-  bodyType: z.enum(['text', 'html']),
   variablesSchemaJson: variablesSchemaJsonSchema.optional(),
 });
 
 export const updateTemplateVersionSchema = z.object({
   subject: z.string().min(1, 'Subject is required').max(255, 'Subject must have at most 255 characters').optional(),
   body: z.string().min(1, 'Body is required').optional(),
-  bodyType: z.enum(['text', 'html']).optional(),
   variablesSchemaJson: variablesSchemaJsonSchema.optional(),
 });
 

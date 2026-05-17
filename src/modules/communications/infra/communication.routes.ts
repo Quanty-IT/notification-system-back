@@ -16,6 +16,13 @@ import {
   updateCommunicationSchema,
 } from '../application/communication.schemas';
 import { CommunicationService } from '../application/communication.service';
+import {
+  COMMUNICATION_CHANNELS,
+  COMMUNICATION_DISPATCH_STATUSES,
+  COMMUNICATION_SOURCE_TYPES,
+  COMMUNICATION_STATUSES,
+} from '../domain/communication.constants';
+import { EMAIL_PROVIDERS } from '../domain/email-provider';
 import { CommunicationController } from './communication.controller';
 import { CommunicationRepositoryPrisma } from './communication.repository.prisma';
 import { R2FileStorage } from './file-storage.r2';
@@ -63,8 +70,8 @@ const communicationDispatchResponseSchema = z.object({
   id: z.uuid(),
   communicationId: z.uuid(),
   attemptNumber: z.number(),
-  provider: z.enum(['smtp', 'nodemailer', 'twilio']),
-  status: z.enum(['processing', 'sent', 'failed']),
+  provider: z.enum(EMAIL_PROVIDERS),
+  status: z.enum(COMMUNICATION_DISPATCH_STATUSES),
   startedAt: z.string(),
   finishedAt: z.string().nullable(),
 });
@@ -75,12 +82,11 @@ const communicationDispatchListResponseSchema = z.object({
 
 const communicationResponseSchema = z.object({
   id: z.uuid(),
-  channel: z.enum(['email']),
-  sourceType: z.enum(['manual', 'template']),
-  status: z.enum(['draft', 'scheduled', 'processing', 'sent', 'failed', 'canceled']),
+  channel: z.enum(COMMUNICATION_CHANNELS),
+  sourceType: z.enum(COMMUNICATION_SOURCE_TYPES),
+  status: z.enum(COMMUNICATION_STATUSES),
   subject: z.string().nullable(),
   body: z.string().nullable(),
-  bodyType: z.enum(['text', 'html']).nullable(),
   templateVersionId: z.string().nullable(),
   templateVariablesJson: z.record(z.string(), z.unknown()).nullable(),
   scheduledAt: z.string().nullable(),
@@ -102,18 +108,17 @@ const communicationListResponseSchema = z.object({
 
 const communicationResponseExample = {
   id: '9a4dcf08-1060-4c48-bf13-e2e8498e7fca',
-  channel: 'email',
-  sourceType: 'template',
-  status: 'draft',
+  channel: COMMUNICATION_CHANNELS.EMAIL,
+  sourceType: COMMUNICATION_SOURCE_TYPES.TEMPLATE,
+  status: COMMUNICATION_STATUSES.SCHEDULED,
   subject: null,
   body: null,
-  bodyType: null,
   templateVersionId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
   templateVariablesJson: {
     name: 'João Silva',
   },
-  scheduledAt: null,
-  processingAt: null,
+  scheduledAt: '2026-05-16T14:15:22.000Z',
+  processingAt: '2026-05-16T14:15:22.000Z',
   sentAt: null,
   createdByUserId: '123e4567-e89b-12d3-a456-426614174000',
   createdAt: '2026-04-06T14:15:22.000Z',
@@ -149,20 +154,7 @@ const communicationWithAttachmentsResponseExample = {
 };
 
 const communicationListResponseExample = {
-  communications: [
-    communicationResponseExample,
-    {
-      ...communicationResponseExample,
-      id: 'dd9258c6-18a8-44b0-8842-6c5a7881f065',
-      channel: 'whatsapp',
-      sourceType: 'manual',
-      subject: null,
-      body: 'Seu pedido #123 foi confirmado!',
-      bodyType: 'text',
-      templateVersionId: null,
-      templateVariablesJson: null,
-    },
-  ],
+  communications: [communicationResponseExample],
 };
 
 const communicationAttachmentListResponseExample = {
@@ -185,8 +177,8 @@ const communicationDispatchResponseExample = {
   id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
   communicationId: '9a4dcf08-1060-4c48-bf13-e2e8498e7fca',
   attemptNumber: 1,
-  provider: 'smtp',
-  status: 'processing',
+  provider: EMAIL_PROVIDERS.RESEND,
+  status: COMMUNICATION_DISPATCH_STATUSES.PROCESSING,
   startedAt: '2026-04-28T15:30:00.000Z',
   finishedAt: null,
 };
@@ -198,8 +190,8 @@ const communicationDispatchListResponseExample = {
       ...communicationDispatchResponseExample,
       id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       attemptNumber: 2,
-      provider: 'nodemailer',
-      status: 'failed',
+      provider: EMAIL_PROVIDERS.NODEMAILER,
+      status: COMMUNICATION_DISPATCH_STATUSES.FAILED,
       finishedAt: '2026-04-28T15:32:15.000Z',
     },
   ],
@@ -238,13 +230,13 @@ registry.registerPath({
         'application/json': {
           schema: createCommunicationSchema,
           example: {
-            channel: 'email',
-            sourceType: 'template',
+            channel: COMMUNICATION_CHANNELS.EMAIL,
+            sourceType: COMMUNICATION_SOURCE_TYPES.TEMPLATE,
             templateVersionId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
             templateVariablesJson: {
               name: 'João Silva',
             },
-            scheduledAt: null,
+            scheduledAt: '2026-05-16T14:15:22.000Z',
             recipients: [
               {
                 recipientType: 'to',
@@ -337,7 +329,6 @@ registry.registerPath({
           example: {
             subject: 'Assunto atualizado',
             body: '<p>Conteúdo atualizado</p>',
-            bodyType: 'html',
             templateVariablesJson: {
               name: 'Maria Silva',
             },
@@ -713,8 +704,6 @@ export const communicationRoutes = () => {
   router.post('/:id/dispatches', controller.createInitialDispatch.bind(controller));
   router.get('/:id/dispatches', controller.findDispatches.bind(controller));
   router.get('/:id/dispatches/:dispatchId', controller.findDispatchById.bind(controller));
-  router.post('/:id/dispatches/:dispatchId/process', controller.processDispatch.bind(controller));
-  router.get('/dispatches/pending', controller.findPendingDispatches.bind(controller));
 
   return router;
 };

@@ -22,7 +22,6 @@ const templateVersionResponseSchema = z.object({
   version: z.number().int(),
   subject: z.string(),
   body: z.string(),
-  bodyType: z.string(),
   variablesSchemaJson: z.record(z.string(), z.unknown()).nullable(),
   isActive: z.boolean(),
   createdAt: z.string(),
@@ -39,7 +38,6 @@ const templateVersionResponseExample = {
   version: 2,
   subject: 'Confirme seu cadastro',
   body: '<p>Ola {{name}}, confirme seu cadastro no link abaixo.</p>',
-  bodyType: 'html',
   variablesSchemaJson: {
     name: 'string',
   },
@@ -57,7 +55,6 @@ const templateVersionListResponseExample = {
       version: 1,
       subject: 'Bem-vindo ao sistema',
       body: 'Ola {{name}}, seu cadastro foi criado com sucesso.',
-      bodyType: 'text',
       variablesSchemaJson: {
         name: 'string',
       },
@@ -94,7 +91,6 @@ registry.registerPath({
             templateId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
             subject: 'Confirme seu cadastro',
             body: '<p>Ola {{name}}, confirme seu cadastro no link abaixo.</p>',
-            bodyType: 'html',
             variablesSchemaJson: {
               name: 'string',
             },
@@ -187,7 +183,6 @@ registry.registerPath({
           example: {
             subject: 'Confirme seu cadastro agora',
             body: '<p>Ola {{name}}, confirme seu cadastro no botao abaixo.</p>',
-            bodyType: 'html',
             variablesSchemaJson: {
               name: 'string',
             },

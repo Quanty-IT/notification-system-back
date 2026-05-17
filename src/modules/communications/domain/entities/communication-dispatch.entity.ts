@@ -1,9 +1,12 @@
+import { COMMUNICATION_DISPATCH_STATUSES, CommunicationDispatchStatus } from '../communication.constants';
+import { EMAIL_PROVIDERS, EmailProviderName } from '../email-provider';
+
 export type CommunicationDispatchesProps = {
   id: string;
   communicationId: string;
   attemptNumber: number;
-  provider: 'smtp' | 'nodemailer' | 'twilio';
-  status: 'processing' | 'sent' | 'failed';
+  provider: EmailProviderName;
+  status: CommunicationDispatchStatus;
   startedAt: Date;
   finishedAt: Date | null;
 };
@@ -16,20 +19,20 @@ export class CommunicationDispatchEntity {
       id: crypto.randomUUID(),
       communicationId,
       attemptNumber: 1,
-      provider: 'smtp',
-      status: 'processing',
+      provider: EMAIL_PROVIDERS.RESEND,
+      status: COMMUNICATION_DISPATCH_STATUSES.PROCESSING,
       startedAt: new Date(),
       finishedAt: null,
     });
   }
 
-  public static createWithNewProvider(communicationId: string, provider: 'smtp' | 'nodemailer' | 'twilio') {
+  public static createWithNewProvider(communicationId: string, provider: EmailProviderName) {
     return new CommunicationDispatchEntity({
       id: crypto.randomUUID(),
       communicationId,
       attemptNumber: 1,
       provider,
-      status: 'processing',
+      status: COMMUNICATION_DISPATCH_STATUSES.PROCESSING,
       startedAt: new Date(),
       finishedAt: null,
     });
@@ -72,42 +75,45 @@ export class CommunicationDispatchEntity {
       throw new Error('Cannot increment attempt beyond 3');
     }
     this.props.attemptNumber++;
-    this.props.status = 'processing';
+    this.props.status = COMMUNICATION_DISPATCH_STATUSES.PROCESSING;
     this.props.startedAt = new Date();
     this.props.finishedAt = null;
   }
 
   public markAsSent() {
-    if (this.props.status !== 'processing') {
+    if (this.props.status !== COMMUNICATION_DISPATCH_STATUSES.PROCESSING) {
       throw new Error('Cannot mark as sent a dispatch that is not processing');
     }
 
-    this.props.status = 'sent';
+    this.props.status = COMMUNICATION_DISPATCH_STATUSES.SENT;
     this.props.finishedAt = new Date();
   }
 
   public markAsFailed() {
-    if (this.props.status !== 'processing') {
+    if (this.props.status !== COMMUNICATION_DISPATCH_STATUSES.PROCESSING) {
       throw new Error('Cannot mark as failed a dispatch that is not processing');
     }
 
-    this.props.status = 'failed';
+    this.props.status = COMMUNICATION_DISPATCH_STATUSES.FAILED;
     this.props.finishedAt = new Date();
   }
 
   public isFinished(): boolean {
-    return this.props.status === 'sent' || this.props.status === 'failed';
+    return (
+      this.props.status === COMMUNICATION_DISPATCH_STATUSES.SENT ||
+      this.props.status === COMMUNICATION_DISPATCH_STATUSES.FAILED
+    );
   }
 
   public isProcessing(): boolean {
-    return this.props.status === 'processing';
+    return this.props.status === COMMUNICATION_DISPATCH_STATUSES.PROCESSING;
   }
 
   public canIncrementAttempt(): boolean {
-    return this.props.status === 'failed' && this.props.attemptNumber < 3;
+    return this.props.status === COMMUNICATION_DISPATCH_STATUSES.FAILED && this.props.attemptNumber < 3;
   }
 
   public needsNewProvider(): boolean {
-    return this.props.status === 'failed' && this.props.attemptNumber >= 3;
+    return this.props.status === COMMUNICATION_DISPATCH_STATUSES.FAILED && this.props.attemptNumber >= 3;
   }
 }

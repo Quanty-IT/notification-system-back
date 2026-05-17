@@ -140,16 +140,16 @@ export class CommunicationController {
     return response.status(200).json(output);
   }
 
-  public async processDispatch(request: Request<{ id: string; dispatchId: string }>, response: Response) {
+  public async processCommunication(request: Request<{ id: string; dispatchId: string }>, response: Response) {
     const { dispatchId } = communicationDispatchIdSchema.parse(request.params);
 
-    await this.service.processDispatch(dispatchId);
+    await this.service.processCommunication(dispatchId);
 
     return response.status(204).send();
   }
 
-  public async findPendingDispatches(_request: Request, response: Response) {
-    const output = await this.service.getPendingDispatches();
+  public async findPendingCommunications(_request: Request, response: Response) {
+    const output = await this.service.getPendingCommunications();
 
     return response.status(200).json(output);
   }

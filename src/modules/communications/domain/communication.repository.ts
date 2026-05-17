@@ -31,6 +31,6 @@ export interface CommunicationRepository {
   findDispatchesByCommunicationId(communicationId: string): Promise<CommunicationDispatchEntity[]>;
   findDispatchById(dispatchId: string): Promise<CommunicationDispatchEntity | null>;
   updateDispatch(dispatch: CommunicationDispatchEntity): Promise<void>;
-  findPendingDispatches(): Promise<CommunicationDispatchEntity[]>;
+  findPendingCommunications(): Promise<CommunicationEntity[]>;
   findLastDispatchByCommunicationId(communicationId: string): Promise<CommunicationDispatchEntity | null>;
 }

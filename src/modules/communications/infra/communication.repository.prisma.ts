@@ -1,4 +1,5 @@
 import { PrismaClient } from '../../../../generated/prisma/client';
+import { COMMUNICATION_STATUSES } from '../domain/communication.constants';
 import { CommunicationRepository } from '../domain/communication.repository';
 import {
   CommunicationAttachmentEntity,
@@ -151,13 +152,22 @@ export class CommunicationRepositoryPrisma implements CommunicationRepository {
     });
   }
 
-  async findPendingDispatches(): Promise<CommunicationDispatchEntity[]> {
-    const dispatches = await this.prisma.communicationDispatch.findMany({
-      where: { status: 'processing' },
-      orderBy: { started_at: 'asc' },
+  async findPendingCommunications(): Promise<CommunicationEntity[]> {
+    const communications = await this.prisma.communication.findMany({
+      where: {
+        status: COMMUNICATION_STATUSES.SCHEDULED,
+        scheduled_at: {
+          lte: new Date(),
+        },
+        processing_at: null,
+        sent_at: null,
+      },
+      orderBy: {
+        scheduled_at: 'asc',
+      },
     });
 
-    return dispatches.map(CommunicationDispatchMapper.toDomain);
+    return communications.map(CommunicationMapper.toDomain);
   }
 
   async findLastDispatchByCommunicationId(communicationId: string): Promise<CommunicationDispatchEntity | null> {

@@ -1,6 +1,8 @@
-import createHttpError from 'http-errors';
 import { TemplateVersionRepository } from '@/modules/template-versions/domain/template-version.repository';
+import createHttpError from 'http-errors';
+import { COMMUNICATION_SOURCE_TYPES, COMMUNICATION_STATUSES } from '../domain/communication.constants';
 import { CommunicationRepository } from '../domain/communication.repository';
+import { EMAIL_PROVIDERS, EmailProviderName } from '../domain/email-provider';
 import {
   CommunicationAttachmentEntity,
   CommunicationDispatchEntity,
@@ -18,7 +20,7 @@ import {
   FindCommunicationDispatchesOutput,
   FindCommunicationRecipientsOutput,
   FindCommunicationsOutput,
-  FindPendingDispatchesOutput,
+  FindPendingCommunicationsOutput,
   GetCommunicationOutput,
   UpdateCommunicationInput,
   UpdateCommunicationOutput,
@@ -46,7 +48,7 @@ export class CommunicationService {
   ) {}
 
   async create(input: CreateCommunicationInput, createdByUserId: string): Promise<CreateCommunicationOutput> {
-    if (input.sourceType === 'template') {
+    if (input.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
       if (!input.templateVersionId) {
         throw new createHttpError.BadRequest('Template version ID is required when source type is template');
       }
@@ -54,6 +56,10 @@ export class CommunicationService {
       const templateVersionExists = await this.templateVersionRepository.findById(input.templateVersionId);
       if (!templateVersionExists) {
         throw new createHttpError.NotFound(`Template version ${input.templateVersionId} not found`);
+      }
+
+      if (!templateVersionExists.isActive) {
+        throw new createHttpError.BadRequest(`Template version ${input.templateVersionId} is not active`);
       }
 
       if (templateVersionExists.variablesSchemaJson && !input.templateVariablesJson) {
@@ -72,18 +78,24 @@ export class CommunicationService {
       }
     }
 
+    const shouldSendImmediately = input.scheduledAt === undefined;
+    const status = shouldSendImmediately ? COMMUNICATION_STATUSES.PROCESSING : COMMUNICATION_STATUSES.SCHEDULED;
+
     const communication = CommunicationEntity.create(
       input.channel,
       input.sourceType,
-      input.status,
+      status,
       input.subject,
       input.body,
-      input.bodyType,
       input.templateVersionId,
       input.templateVariablesJson,
       input.scheduledAt,
       createdByUserId,
     );
+
+    if (shouldSendImmediately) {
+      communication.markAsProcessing();
+    }
 
     await this.repository.create(communication);
 
@@ -146,7 +158,7 @@ export class CommunicationService {
     }
 
     if (input.templateVersionId !== undefined) {
-      if (communication.sourceType === 'template' && !input.templateVersionId) {
+      if (communication.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE && !input.templateVersionId) {
         throw new createHttpError.BadRequest('Template version ID is required for template source type');
       }
 
@@ -159,7 +171,11 @@ export class CommunicationService {
     }
 
     if (input.templateVariablesJson !== undefined) {
-      if (communication.sourceType === 'template' && !input.templateVariablesJson && communication.templateVersionId) {
+      if (
+        communication.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE &&
+        !input.templateVariablesJson &&
+        communication.templateVersionId
+      ) {
         throw new createHttpError.BadRequest('Template variables JSON is required for template source type');
       }
     }
@@ -170,9 +186,9 @@ export class CommunicationService {
       }
     }
 
-    if (input.body !== undefined || input.bodyType !== undefined) {
-      if (communication.sourceType === 'template') {
-        throw new createHttpError.BadRequest('body and bodyType can only be updated for manual communications');
+    if (input.body !== undefined) {
+      if (communication.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
+        throw new createHttpError.BadRequest('body can only be updated for manual communications');
       }
     }
 
@@ -182,14 +198,8 @@ export class CommunicationService {
       }
     }
 
-    if (input.bodyType !== undefined) {
-      if (input.bodyType !== null) {
-        communication.updateBodyType(input.bodyType);
-      }
-    }
-
     if (input.templateVariablesJson !== undefined) {
-      if (communication.sourceType === 'manual') {
+      if (communication.sourceType === COMMUNICATION_SOURCE_TYPES.MANUAL) {
         throw new createHttpError.BadRequest('templateVariablesJson can only be updated for template communications');
       }
     }
@@ -233,8 +243,8 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
-    if (communication.status !== 'draft' && communication.status !== 'scheduled') {
-      throw new createHttpError.BadRequest('Attachments can only be added to draft or scheduled communications');
+    if (communication.status !== 'scheduled') {
+      throw new createHttpError.BadRequest('Attachments can only be added to scheduled communications');
     }
 
     if (input.fileSizeBytes <= 0) {
@@ -286,8 +296,8 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
-    if (communication.status !== 'draft' && communication.status !== 'scheduled') {
-      throw new createHttpError.BadRequest('Attachments can only be removed from draft or scheduled communications');
+    if (communication.status !== 'scheduled') {
+      throw new createHttpError.BadRequest('Attachments can only be removed from scheduled communications');
     }
 
     const attachment = await this.repository.findAttachmentById(attachmentId);
@@ -307,8 +317,8 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
-    if (communication.status !== 'draft' && communication.status !== 'scheduled') {
-      throw new createHttpError.BadRequest('Recipients can only be added to draft or scheduled communications');
+    if (communication.status !== 'scheduled') {
+      throw new createHttpError.BadRequest('Recipients can only be added to scheduled communications');
     }
 
     const existingRecipient = await this.repository.findRecipientByEmailAndType(
@@ -337,8 +347,8 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
-    if (communication.status !== 'draft' && communication.status !== 'scheduled') {
-      throw new createHttpError.BadRequest('Recipients can only be removed from draft or scheduled communications');
+    if (communication.status !== 'scheduled') {
+      throw new createHttpError.BadRequest('Recipients can only be removed from scheduled communications');
     }
 
     const recipient = await this.repository.findRecipientById(recipientId);
@@ -372,7 +382,6 @@ export class CommunicationService {
       status: communication.status,
       subject: communication.subject,
       body: communication.body,
-      bodyType: communication.bodyType,
       templateVersionId: communication.templateVersionId,
       templateVariablesJson: communication.templateVariablesJson,
       scheduledAt: communication.scheduledAt,
@@ -435,33 +444,50 @@ export class CommunicationService {
     await this.repository.createDispatch(dispatch);
   }
 
-  async processDispatch(dispatchId: string): Promise<void> {
-    const dispatch = await this.repository.findDispatchById(dispatchId);
-    if (!dispatch) {
-      throw createHttpError.NotFound(`Dispatch ${dispatchId} not found`);
+  async processCommunication(communicationId: string): Promise<void> {
+    const communication = await this.repository.findById(communicationId);
+
+    if (!communication) {
+      throw createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
-    if (!dispatch.isProcessing()) {
-      throw createHttpError.BadRequest('Dispatch is not in processing status');
+    if (
+      communication.status !== COMMUNICATION_STATUSES.SCHEDULED &&
+      communication.status !== COMMUNICATION_STATUSES.PROCESSING
+    ) {
+      throw createHttpError.BadRequest('Communication is not available for processing');
     }
+
+    const dispatch = CommunicationDispatchEntity.create(communication.id);
 
     try {
+      communication.markAsProcessing();
+      await this.repository.update(communication);
+
+      await this.repository.createDispatch(dispatch);
+
       await this.sendEmail(dispatch);
 
       dispatch.markAsSent();
       await this.repository.updateDispatch(dispatch);
-    } catch (_error) {
-      dispatch.markAsFailed();
-      await this.repository.updateDispatch(dispatch);
 
-      await this.handleRetry(dispatch);
+      communication.markAsSent();
+      await this.repository.update(communication);
+    } catch (error) {
+      dispatch.markAsFailed();
+
+      try {
+        await this.repository.updateDispatch(dispatch);
+      } catch {}
+
+      communication.markAsFailed();
+      await this.repository.update(communication);
+
+      throw error;
     }
   }
 
-  async createDispatchWithNewProvider(
-    communicationId: string,
-    provider: 'smtp' | 'nodemailer' | 'twilio',
-  ): Promise<void> {
+  async createDispatchWithNewProvider(communicationId: string, provider: EmailProviderName): Promise<void> {
     const communication = await this.repository.findById(communicationId);
     if (!communication) {
       throw createHttpError.NotFound(`Communication ${communicationId} not found`);
@@ -476,11 +502,11 @@ export class CommunicationService {
     await this.repository.createDispatch(newDispatch);
   }
 
-  async getPendingDispatches(): Promise<FindPendingDispatchesOutput> {
-    const dispatches = await this.repository.findPendingDispatches();
+  async getPendingCommunications(): Promise<FindPendingCommunicationsOutput> {
+    const communications = await this.repository.findPendingCommunications();
 
     return {
-      dispatches: dispatches.map((dispatch) => this.toDispatchOutput(dispatch)),
+      communications: communications.map((communication) => this.toOutput(communication)),
     };
   }
 
@@ -519,8 +545,8 @@ export class CommunicationService {
     }
   }
 
-  private getNextProvider(currentProvider: 'smtp' | 'nodemailer' | 'twilio'): 'smtp' | 'nodemailer' | 'twilio' | null {
-    const providers: ('smtp' | 'nodemailer' | 'twilio')[] = ['smtp', 'nodemailer', 'twilio'];
+  private getNextProvider(currentProvider: EmailProviderName): EmailProviderName | null {
+    const providers: EmailProviderName[] = Object.values(EMAIL_PROVIDERS);
     const currentIndex = providers.indexOf(currentProvider);
 
     if (currentIndex < providers.length - 1) {
@@ -532,12 +558,10 @@ export class CommunicationService {
   }
 
   private async sendEmail(dispatch: CommunicationDispatchEntity): Promise<void> {
-    if (dispatch.provider === 'smtp') {
-      // SMTP
-    } else if (dispatch.provider === 'nodemailer') {
+    if (dispatch.provider === EMAIL_PROVIDERS.RESEND) {
+      // Resend
+    } else if (dispatch.provider === EMAIL_PROVIDERS.NODEMAILER) {
       // Nodemailer
-    } else if (dispatch.provider === 'twilio') {
-      // Twilio
     }
   }
 }

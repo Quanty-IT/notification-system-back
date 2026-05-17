@@ -1,4 +1,4 @@
-import { Prisma, TemplateVersion as PrismaTemplateVersion } from '../../../../generated/prisma/client';
+import { TemplateVersion as PrismaTemplateVersion } from '../../../../generated/prisma/client';
 import { TemplateVersionEntity, TemplateVersionVariableType } from '../domain/template-version.entity';
 
 export class TemplateVersionMapper {
@@ -9,7 +9,6 @@ export class TemplateVersionMapper {
       version: templateVersion.version,
       subject: templateVersion.subject,
       body: templateVersion.body,
-      bodyType: templateVersion.body_type as 'text' | 'html',
       variablesSchemaJson:
         (templateVersion.variables_schema_json as Record<string, TemplateVersionVariableType> | null) ?? null,
       isActive: templateVersion.is_active,
@@ -25,11 +24,7 @@ export class TemplateVersionMapper {
       version: templateVersion.version,
       subject: templateVersion.subject,
       body: templateVersion.body,
-      body_type: templateVersion.bodyType,
-      variables_schema_json:
-        templateVersion.variablesSchemaJson === null
-          ? Prisma.DbNull
-          : (templateVersion.variablesSchemaJson as Prisma.InputJsonValue),
+      variables_schema_json: templateVersion.variablesSchemaJson === null,
       is_active: templateVersion.isActive,
       created_at: templateVersion.createdAt,
       updated_at: templateVersion.updatedAt,

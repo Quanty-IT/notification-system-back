@@ -1,4 +1,6 @@
 import { CommunicationDispatch as PrismaCommunicationDispatch } from '../../../../../generated/prisma/client';
+import { CommunicationDispatchStatus } from '../../domain/communication.constants';
+import { EmailProviderName } from '../../domain/email-provider';
 import { CommunicationDispatchEntity } from '../../domain/entities/communication-dispatch.entity';
 
 export class CommunicationDispatchMapper {
@@ -7,8 +9,8 @@ export class CommunicationDispatchMapper {
       id: dispatch.id,
       communicationId: dispatch.communication_id,
       attemptNumber: dispatch.attempt_number,
-      provider: dispatch.provider as 'smtp' | 'nodemailer' | 'twilio',
-      status: dispatch.status as 'processing' | 'sent' | 'failed',
+      provider: dispatch.provider as EmailProviderName,
+      status: dispatch.status as CommunicationDispatchStatus,
       startedAt: dispatch.started_at,
       finishedAt: dispatch.finished_at,
     });

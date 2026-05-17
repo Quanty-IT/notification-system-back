@@ -1,3 +1,4 @@
+import { TemplateVariableValue } from 'resend';
 import { z } from 'zod';
 import { createTemplateVersionSchema, updateTemplateVersionSchema } from './template-version.schemas';
 
@@ -10,8 +11,7 @@ export type TemplateVersionOutput = {
   version: number;
   subject: string;
   body: string;
-  bodyType: 'text' | 'html';
-  variablesSchemaJson: Record<string, 'string' | 'number' | 'boolean'> | null;
+  variablesSchemaJson: Record<string, TemplateVariableValue> | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

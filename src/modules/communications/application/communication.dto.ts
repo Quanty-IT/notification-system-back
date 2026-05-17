@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import {
+  CommunicationChannel,
+  CommunicationDispatchStatus,
+  CommunicationSourceType,
+  CommunicationStatus,
+} from '../domain/communication.constants';
+import { EmailProviderName } from '../domain/email-provider';
 import { TemplateVariableValue } from '../domain/entities';
 import { createCommunicationSchema, updateCommunicationSchema } from './communication.schemas';
 
@@ -29,20 +36,19 @@ export type CommunicationDispatchOutput = {
   id: string;
   communicationId: string;
   attemptNumber: number;
-  provider: 'smtp' | 'nodemailer' | 'twilio';
-  status: 'processing' | 'sent' | 'failed';
+  provider: EmailProviderName;
+  status: CommunicationDispatchStatus;
   startedAt: Date;
   finishedAt: Date | null;
 };
 
 export type CommunicationOutput = {
   id: string;
-  channel: 'email';
-  sourceType: 'manual' | 'template';
-  status: 'draft' | 'scheduled' | 'processing' | 'sent' | 'failed' | 'canceled';
+  channel: CommunicationChannel;
+  sourceType: CommunicationSourceType;
+  status: CommunicationStatus;
   subject: string | null;
   body: string | null;
-  bodyType: 'text' | 'html' | null;
   templateVersionId: string | null;
   templateVariablesJson: Record<string, TemplateVariableValue> | null;
   scheduledAt: Date | null;
@@ -81,6 +87,6 @@ export type FindCommunicationDispatchesOutput = {
   dispatches: CommunicationDispatchOutput[];
 };
 
-export type FindPendingDispatchesOutput = {
-  dispatches: CommunicationDispatchOutput[];
+export type FindPendingCommunicationsOutput = {
+  communications: CommunicationOutput[];
 };

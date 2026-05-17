@@ -18,24 +18,40 @@ export class CommunicationDispatchCron {
 
   public start(): void {
     cron.schedule('* * * * *', async () => {
-      await this.processPendingDispatches();
+      console.log('[CRON] Rodou em:', new Date().toISOString());
+      console.log('[CRON] Horário local:', new Date().toLocaleString('pt-BR'));
+
+      await this.processPendingCommunications();
     });
   }
 
-  private async processPendingDispatches(): Promise<void> {
+  private async processPendingCommunications(): Promise<void> {
     try {
-      const pendingDispatches = await this.communicationService.getPendingDispatches();
+      console.log('[CRON] Buscando comunicações pendentes...');
 
-      if (pendingDispatches.dispatches.length === 0) {
+      const pendingCommunications = await this.communicationService.getPendingCommunications();
+
+      console.log('[CRON] Comunicações encontradas:', pendingCommunications.communications.length);
+
+      if (pendingCommunications.communications.length === 0) {
         return;
       }
 
-      for (const dispatch of pendingDispatches.dispatches) {
+      for (const communication of pendingCommunications.communications) {
         try {
-          await this.communicationService.processDispatch(dispatch.id);
+          console.log('[CRON] Processando comunicação:', communication.id);
+
+          await this.communicationService.processCommunication(communication.id);
+
+          console.log('[CRON] Comunicação processada:', communication.id);
+
           await new Promise((resolve) => setTimeout(resolve, 1000));
-        } catch (_error) {}
+        } catch (error) {
+          console.error('[CRON] Erro ao processar comunicação:', communication.id, error);
+        }
       }
-    } catch (_error) {}
+    } catch (error) {
+      console.error('[CRON] Erro geral:', error);
+    }
   }
 }
