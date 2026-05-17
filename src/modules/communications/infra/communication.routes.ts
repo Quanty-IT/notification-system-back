@@ -26,7 +26,7 @@ import { EMAIL_PROVIDERS } from '../domain/email-provider';
 import { CommunicationController } from './communication.controller';
 import { CommunicationRepositoryPrisma } from './communication.repository.prisma';
 import { R2FileStorage } from './file-storage.r2';
-import { ResendEmailProvider } from './providers/resend-email.provider';
+import { MailtrapEmailProvider, ResendEmailProvider } from './providers';
 
 const TEN_MEGABYTES = 10 * 1024 * 1024;
 
@@ -191,7 +191,7 @@ const communicationDispatchListResponseExample = {
       ...communicationDispatchResponseExample,
       id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       attemptNumber: 2,
-      provider: EMAIL_PROVIDERS.NODEMAILER,
+      provider: EMAIL_PROVIDERS.MAILTRAP,
       status: COMMUNICATION_DISPATCH_STATUSES.FAILED,
       finishedAt: '2026-04-28T15:32:15.000Z',
     },
@@ -684,9 +684,16 @@ export const communicationRoutes = () => {
   const repository = new CommunicationRepositoryPrisma(prisma);
   const templateVersionRepository = new TemplateVersionRepositoryPrisma(prisma);
   const resendEmailProvider = new ResendEmailProvider();
+  const mailtrapEmailProvider = new MailtrapEmailProvider();
   const fileStorage = new R2FileStorage();
 
-  const service = new CommunicationService(repository, templateVersionRepository, resendEmailProvider, fileStorage);
+  const service = new CommunicationService(
+    repository,
+    templateVersionRepository,
+    resendEmailProvider,
+    mailtrapEmailProvider,
+    fileStorage,
+  );
   const controller = new CommunicationController(service);
 
   router.post('/', controller.create.bind(controller));

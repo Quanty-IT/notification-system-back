@@ -1,5 +1,5 @@
 import * as cron from 'node-cron';
-import { ResendEmailProvider } from '@/modules/communications/infra/providers/resend-email.provider';
+import { MailtrapEmailProvider, ResendEmailProvider } from '@/modules/communications/infra/providers';
 import { CommunicationService } from '../../modules/communications/application/communication.service';
 import { CommunicationRepositoryPrisma } from '../../modules/communications/infra/communication.repository.prisma';
 import { R2FileStorage } from '../../modules/communications/infra/file-storage.r2';
@@ -12,13 +12,15 @@ export class CommunicationDispatchCron {
   constructor() {
     const repository = new CommunicationRepositoryPrisma(prisma);
     const templateVersionRepository = new TemplateVersionRepositoryPrisma(prisma);
-    const emailProvider = new ResendEmailProvider();
+    const resendEmailProvider = new ResendEmailProvider();
+    const mailtrapEmailProvider = new MailtrapEmailProvider();
     const fileStorage = new R2FileStorage();
 
     this.communicationService = new CommunicationService(
       repository,
       templateVersionRepository,
-      emailProvider,
+      resendEmailProvider,
+      mailtrapEmailProvider,
       fileStorage,
     );
   }

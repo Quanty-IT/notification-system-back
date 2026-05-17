@@ -3,7 +3,13 @@ import { TemplateVersionRepository } from '@/modules/template-versions/domain/te
 import { renderTemplate } from '@/shared';
 import { COMMUNICATION_SOURCE_TYPES, COMMUNICATION_STATUSES } from '../domain/communication.constants';
 import { CommunicationRepository } from '../domain/communication.repository';
-import { EMAIL_PROVIDERS, EmailProvider, EmailProviderName, SendEmailInput } from '../domain/email-provider';
+import {
+  EMAIL_PROVIDER_FALLBACK_ORDER,
+  EMAIL_PROVIDERS,
+  EmailProvider,
+  EmailProviderName,
+  SendEmailInput,
+} from '../domain/email-provider';
 import {
   CommunicationAttachmentEntity,
   CommunicationDispatchEntity,
@@ -46,6 +52,7 @@ export class CommunicationService {
     private readonly repository: CommunicationRepository,
     private readonly templateVersionRepository: TemplateVersionRepository,
     private readonly resendEmailProvider: EmailProvider,
+    private readonly mailtrapEmailProvider: EmailProvider,
     private readonly fileStorage: FileStorage,
   ) {}
 
@@ -446,6 +453,18 @@ export class CommunicationService {
     await this.repository.createDispatch(dispatch);
   }
 
+  private getEmailProvider(provider: EmailProviderName): EmailProvider {
+    if (provider === EMAIL_PROVIDERS.RESEND) {
+      return this.resendEmailProvider;
+    }
+
+    if (provider === EMAIL_PROVIDERS.MAILTRAP) {
+      return this.mailtrapEmailProvider;
+    }
+
+    throw createHttpError.BadRequest(`Unsupported email provider: ${provider}`);
+  }
+
   async processCommunication(communicationId: string): Promise<void> {
     const communication = await this.repository.findById(communicationId);
 
@@ -453,40 +472,46 @@ export class CommunicationService {
       throw createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
-    if (
-      communication.status !== COMMUNICATION_STATUSES.SCHEDULED &&
-      communication.status !== COMMUNICATION_STATUSES.PROCESSING
-    ) {
+    if (communication.status !== COMMUNICATION_STATUSES.SCHEDULED) {
       throw createHttpError.BadRequest('Communication is not available for processing');
     }
 
-    const dispatch = CommunicationDispatchEntity.create(communication.id);
+    communication.markAsProcessing();
+    await this.repository.update(communication);
 
-    try {
-      communication.markAsProcessing();
-      await this.repository.update(communication);
+    let lastError: unknown;
 
-      await this.repository.createDispatch(dispatch);
-
-      await this.sendEmail(dispatch);
-
-      dispatch.markAsSent();
-      await this.repository.updateDispatch(dispatch);
-
-      communication.markAsSent();
-      await this.repository.update(communication);
-    } catch (error) {
-      dispatch.markAsFailed();
+    const providers = EMAIL_PROVIDER_FALLBACK_ORDER;
+    for (const provider of providers) {
+      const dispatch = CommunicationDispatchEntity.createWithNewProvider(communication.id, provider);
 
       try {
+        await this.repository.createDispatch(dispatch);
+
+        await this.sendEmail(dispatch);
+
+        dispatch.markAsSent();
         await this.repository.updateDispatch(dispatch);
-      } catch {}
 
-      communication.markAsFailed();
-      await this.repository.update(communication);
+        communication.markAsSent();
+        await this.repository.update(communication);
 
-      throw error;
+        return;
+      } catch (error) {
+        lastError = error;
+
+        dispatch.markAsFailed();
+
+        try {
+          await this.repository.updateDispatch(dispatch);
+        } catch {}
+      }
     }
+
+    communication.markAsFailed();
+    await this.repository.update(communication);
+
+    throw lastError;
   }
 
   async createDispatchWithNewProvider(communicationId: string, provider: EmailProviderName): Promise<void> {
@@ -534,31 +559,6 @@ export class CommunicationService {
     return this.toDispatchOutput(dispatch);
   }
 
-  private async handleRetry(dispatch: CommunicationDispatchEntity): Promise<void> {
-    if (dispatch.canIncrementAttempt()) {
-      dispatch.incrementAttempt();
-      await this.repository.updateDispatch(dispatch);
-    } else if (dispatch.needsNewProvider()) {
-      const nextProvider = this.getNextProvider(dispatch.provider);
-      if (nextProvider) {
-        const newDispatch = CommunicationDispatchEntity.createWithNewProvider(dispatch.communicationId, nextProvider);
-        await this.repository.createDispatch(newDispatch);
-      }
-    }
-  }
-
-  private getNextProvider(currentProvider: EmailProviderName): EmailProviderName | null {
-    const providers: EmailProviderName[] = Object.values(EMAIL_PROVIDERS);
-    const currentIndex = providers.indexOf(currentProvider);
-
-    if (currentIndex < providers.length - 1) {
-      const nextProvider = providers[currentIndex + 1];
-      return nextProvider ?? null;
-    }
-
-    return null;
-  }
-
   private async sendEmail(dispatch: CommunicationDispatchEntity): Promise<void> {
     const communication = await this.repository.findById(dispatch.communicationId);
     if (!communication) {
@@ -570,6 +570,10 @@ export class CommunicationService {
     const to = recipients.filter((recipient) => recipient.recipientType === 'to').map((recipient) => recipient.email);
     const cc = recipients.filter((recipient) => recipient.recipientType === 'cc').map((recipient) => recipient.email);
     const bcc = recipients.filter((recipient) => recipient.recipientType === 'bcc').map((recipient) => recipient.email);
+
+    if (to.length === 0) {
+      throw createHttpError.BadRequest('Communication must have at least one recipient');
+    }
 
     const attachments = await this.repository.findAttachmentsByCommunicationId(communication.id);
 
@@ -606,20 +610,17 @@ export class CommunicationService {
       throw createHttpError.BadRequest('Communication content is incomplete');
     }
 
-    if (dispatch.provider === EMAIL_PROVIDERS.RESEND) {
-      const emailInput: SendEmailInput = {
-        from: process.env.RESEND_FROM_EMAIL ?? '',
-        to,
-        subject,
-        html: body,
-        ...(cc.length > 0 ? { cc } : {}),
-        ...(bcc.length > 0 ? { bcc } : {}),
-        ...(emailAttachments.length > 0 ? { attachments: emailAttachments } : {}),
-      };
+    const emailInput: SendEmailInput = {
+      from: process.env.EMAIL_FROM ?? '',
+      to,
+      subject,
+      html: body,
+      ...(cc.length > 0 ? { cc } : {}),
+      ...(bcc.length > 0 ? { bcc } : {}),
+      ...(emailAttachments.length > 0 ? { attachments: emailAttachments } : {}),
+    };
 
-      return await this.resendEmailProvider.send(emailInput);
-    }
-
-    throw createHttpError.BadRequest(`Unsupported email provider: ${dispatch.provider}`);
+    const emailProvider = this.getEmailProvider(dispatch.provider);
+    await emailProvider.send(emailInput);
   }
 }
