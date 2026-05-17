@@ -571,6 +571,19 @@ export class CommunicationService {
     const cc = recipients.filter((recipient) => recipient.recipientType === 'cc').map((recipient) => recipient.email);
     const bcc = recipients.filter((recipient) => recipient.recipientType === 'bcc').map((recipient) => recipient.email);
 
+    const attachments = await this.repository.findAttachmentsByCommunicationId(communication.id);
+
+    const emailAttachments = await Promise.all(
+      attachments.map(async (attachment) => {
+        const file = await this.fileStorage.download(attachment.storageKey);
+
+        return {
+          filename: attachment.originalFileName,
+          content: file.content.toString('base64'),
+        };
+      }),
+    );
+
     let subject = communication.subject;
     let body = communication.body;
 
@@ -601,6 +614,7 @@ export class CommunicationService {
         html: body,
         ...(cc.length > 0 ? { cc } : {}),
         ...(bcc.length > 0 ? { bcc } : {}),
+        ...(emailAttachments.length > 0 ? { attachments: emailAttachments } : {}),
       };
 
       return await this.resendEmailProvider.send(emailInput);

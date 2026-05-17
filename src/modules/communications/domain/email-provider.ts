@@ -5,6 +5,11 @@ export const EMAIL_PROVIDERS = {
 
 export type EmailProviderName = (typeof EMAIL_PROVIDERS)[keyof typeof EMAIL_PROVIDERS];
 
+export type SendEmailAttachment = {
+  filename: string;
+  content: string;
+};
+
 export type SendEmailInput = {
   from: string;
   to: string[];
@@ -12,6 +17,7 @@ export type SendEmailInput = {
   bcc?: string[];
   subject: string;
   html: string;
+  attachments?: SendEmailAttachment[];
 };
 
 export interface EmailProvider {

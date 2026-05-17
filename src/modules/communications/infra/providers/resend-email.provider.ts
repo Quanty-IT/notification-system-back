@@ -17,6 +17,7 @@ export class ResendEmailProvider implements EmailProvider {
       html: input.html,
       ...(input.cc?.length ? { cc: input.cc } : {}),
       ...(input.bcc?.length ? { bcc: input.bcc } : {}),
+      ...(input.attachments?.length ? { attachments: input.attachments } : {}),
     };
 
     const { error } = await resend.emails.send(emailPayload);
