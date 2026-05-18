@@ -28,6 +28,18 @@ const envSchema = z.object({
   CLOUDFLARE_BUCKET_NAME: z.string().min(1, 'CLOUDFLARE_BUCKET_NAME is required'),
   CLOUDFLARE_ACCESS_KEY_ID: z.string().min(1, 'CLOUDFLARE_ACCESS_KEY_ID is required'),
   CLOUDFLARE_SECRET_ACCESS_KEY: z.string().min(1, 'CLOUDFLARE_SECRET_ACCESS_KEY is required'),
+
+  // Email sender address
+  EMAIL_FROM: z.string().min(1, 'EMAIL_FROM is required'),
+
+  // Resend
+  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
+
+  // Mailtrap
+  MAILTRAP_HOST: z.string().min(1, 'MAILTRAP_HOST is required'),
+  MAILTRAP_USER: z.string().min(1, 'MAILTRAP_USER is required'),
+  MAILTRAP_PASS: z.string().min(1, 'MAILTRAP_PASS is required'),
+  MAILTRAP_SECURE: z.string().min(1, 'MAILTRAP_SECURE is required'),
 });
 
 const result = envSchema.safeParse(process.env);

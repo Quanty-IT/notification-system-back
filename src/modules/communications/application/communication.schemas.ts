@@ -1,5 +1,10 @@
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
+import {
+  COMMUNICATION_CHANNELS,
+  COMMUNICATION_SOURCE_TYPES,
+  COMMUNICATION_STATUSES,
+} from '../domain/communication.constants';
 
 extendZodWithOpenApi(z);
 
@@ -9,17 +14,16 @@ export const templateVariablesJsonSchema = z.record(z.string(), templateVariable
 
 export const createRecipientSchema = z.object({
   recipientType: z.enum(['to', 'cc', 'bcc']),
-  email: z.string().email(),
+  email: z.email(),
 });
 
 export const createCommunicationSchema = z
   .object({
-    channel: z.enum(['email']),
-    sourceType: z.enum(['manual', 'template']),
-    status: z.enum(['draft', 'scheduled', 'processing', 'sent', 'failed', 'canceled']).default('draft'),
+    channel: z.enum(COMMUNICATION_CHANNELS),
+    sourceType: z.enum(COMMUNICATION_SOURCE_TYPES),
+    status: z.enum(COMMUNICATION_STATUSES).default(COMMUNICATION_STATUSES.PROCESSING),
     subject: z.string().max(255).nullable().optional(),
     body: z.string().nullable().optional(),
-    bodyType: z.enum(['text', 'html']).nullable().optional(),
     templateVersionId: z.string().nullable().optional(),
     templateVariablesJson: templateVariablesJsonSchema.nullable().optional(),
     scheduledAt: z.coerce.date().nullable().optional(),
@@ -27,7 +31,7 @@ export const createCommunicationSchema = z
   })
   .refine(
     (data) => {
-      if (data.sourceType === 'template') {
+      if (data.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
         return data.templateVersionId !== null && data.templateVersionId !== undefined;
       }
       return true;
@@ -39,19 +43,19 @@ export const createCommunicationSchema = z
   )
   .refine(
     (data) => {
-      if (data.sourceType === 'template') {
-        return data.body === undefined && data.bodyType === undefined;
+      if (data.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
+        return data.body === undefined;
       }
       return true;
     },
     {
-      message: 'body and bodyType cannot be provided when sourceType is template',
+      message: 'body cannot be provided when sourceType is template',
       path: ['body'],
     },
   )
   .refine(
     (data) => {
-      if (data.sourceType === 'manual') {
+      if (data.sourceType === COMMUNICATION_SOURCE_TYPES.MANUAL) {
         return data.templateVersionId === undefined && data.templateVariablesJson === undefined;
       }
       return true;
@@ -65,7 +69,7 @@ export const createCommunicationSchema = z
     (data) => {
       const recipients = data.recipients;
       const uniqueRecipients = new Set();
-      
+
       for (const recipient of recipients) {
         const key = `${recipient.email.toLowerCase()}_${recipient.recipientType}`;
         if (uniqueRecipients.has(key)) {
@@ -73,7 +77,7 @@ export const createCommunicationSchema = z
         }
         uniqueRecipients.add(key);
       }
-      
+
       return true;
     },
     {
@@ -85,7 +89,6 @@ export const createCommunicationSchema = z
 export const updateCommunicationSchema = z.object({
   subject: z.string().max(255, 'Subject must have at most 255 characters').nullable().optional(),
   body: z.string().nullable().optional(),
-  bodyType: z.enum(['text', 'html']).nullable().optional(),
   templateVersionId: z.string().nullable().optional(),
   templateVariablesJson: templateVariablesJsonSchema.optional(),
   scheduledAt: z.coerce.date().nullable().optional(),
@@ -105,9 +108,15 @@ export const communicationRecipientIdSchema = z.object({
   recipientId: z.uuid('Invalid recipient UUID'),
 });
 
+export const communicationDispatchIdSchema = z.object({
+  id: z.uuid('Invalid communication UUID'),
+  dispatchId: z.uuid('Invalid dispatch UUID'),
+});
+
 export type CreateCommunicationSchemaInput = z.infer<typeof createCommunicationSchema>;
 export type UpdateCommunicationSchemaInput = z.infer<typeof updateCommunicationSchema>;
 export type CreateRecipientSchemaInput = z.infer<typeof createRecipientSchema>;
 export type CommunicationIdSchemaInput = z.infer<typeof communicationIdSchema>;
 export type CommunicationAttachmentIdSchemaInput = z.infer<typeof communicationAttachmentIdSchema>;
 export type CommunicationRecipientIdSchemaInput = z.infer<typeof communicationRecipientIdSchema>;
+export type CommunicationDispatchIdSchemaInput = z.infer<typeof communicationDispatchIdSchema>;

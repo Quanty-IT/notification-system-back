@@ -1,5 +1,5 @@
-import { CommunicationRecipient as PrismaCommunicationRecipient } from '../../../../generated/prisma/client';
-import { CommunicationRecipientEntity } from '../domain/communication-recipient.entity';
+import { CommunicationRecipient as PrismaCommunicationRecipient } from '../../../../../generated/prisma/client';
+import { CommunicationRecipientEntity } from '../../domain/entities/communication-recipient.entity';
 
 export class CommunicationRecipientMapper {
   static toDomain(recipient: PrismaCommunicationRecipient): CommunicationRecipientEntity {

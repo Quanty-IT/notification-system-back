@@ -6,7 +6,6 @@ export type TemplateVersionProps = {
   version: number;
   subject: string;
   body: string;
-  bodyType: 'text' | 'html';
   variablesSchemaJson: Record<string, TemplateVersionVariableType> | null;
   isActive: boolean;
   createdAt: Date;
@@ -21,7 +20,6 @@ export class TemplateVersionEntity {
     version: number,
     subject: string,
     body: string,
-    bodyType: 'text' | 'html',
     variablesSchemaJson?: Record<string, TemplateVersionVariableType> | null,
   ) {
     return new TemplateVersionEntity({
@@ -30,7 +28,6 @@ export class TemplateVersionEntity {
       version,
       subject,
       body,
-      bodyType,
       variablesSchemaJson: variablesSchemaJson ?? null,
       isActive: true,
       createdAt: new Date(),
@@ -62,10 +59,6 @@ export class TemplateVersionEntity {
     return this.props.body;
   }
 
-  get bodyType() {
-    return this.props.bodyType;
-  }
-
   get variablesSchemaJson() {
     return this.props.variablesSchemaJson;
   }
@@ -89,11 +82,6 @@ export class TemplateVersionEntity {
 
   public updateBody(body: string) {
     this.props.body = body;
-    this.props.updatedAt = new Date();
-  }
-
-  public updateBodyType(bodyType: 'text' | 'html') {
-    this.props.bodyType = bodyType;
     this.props.updatedAt = new Date();
   }
 

@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { TemplateVariableValue } from '../domain/communication.entity';
+import {
+  CommunicationChannel,
+  CommunicationDispatchStatus,
+  CommunicationSourceType,
+  CommunicationStatus,
+} from '../domain/communication.constants';
+import { EmailProviderName } from '../domain/email-provider';
+import { TemplateVariableValue } from '../domain/entities';
 import { createCommunicationSchema, updateCommunicationSchema } from './communication.schemas';
 
 export type CreateCommunicationInput = z.infer<typeof createCommunicationSchema>;
@@ -25,14 +32,23 @@ export type CommunicationAttachmentOutput = {
   createdAt: Date;
 };
 
+export type CommunicationDispatchOutput = {
+  id: string;
+  communicationId: string;
+  attemptNumber: number;
+  provider: EmailProviderName;
+  status: CommunicationDispatchStatus;
+  startedAt: Date;
+  finishedAt: Date | null;
+};
+
 export type CommunicationOutput = {
   id: string;
-  channel: 'email';
-  sourceType: 'manual' | 'template';
-  status: 'draft' | 'scheduled' | 'processing' | 'sent' | 'failed' | 'canceled';
+  channel: CommunicationChannel;
+  sourceType: CommunicationSourceType;
+  status: CommunicationStatus;
   subject: string | null;
   body: string | null;
-  bodyType: 'text' | 'html' | null;
   templateVersionId: string | null;
   templateVariablesJson: Record<string, TemplateVariableValue> | null;
   scheduledAt: Date | null;
@@ -52,6 +68,7 @@ export type UpdateCommunicationOutput = CommunicationOutput;
 export type GetCommunicationOutput = CommunicationOutput & {
   attachments: CommunicationAttachmentOutput[];
   recipients: CommunicationRecipientOutput[];
+  dispatches: CommunicationDispatchOutput[];
 };
 
 export type FindCommunicationsOutput = {
@@ -64,4 +81,12 @@ export type FindCommunicationAttachmentsOutput = {
 
 export type FindCommunicationRecipientsOutput = {
   recipients: CommunicationRecipientOutput[];
+};
+
+export type FindCommunicationDispatchesOutput = {
+  dispatches: CommunicationDispatchOutput[];
+};
+
+export type FindPendingCommunicationsOutput = {
+  communications: CommunicationOutput[];
 };

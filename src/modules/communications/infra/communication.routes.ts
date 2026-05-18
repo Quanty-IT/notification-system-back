@@ -8,6 +8,7 @@ import { TemplateVersionRepositoryPrisma } from '@/modules/template-versions/inf
 
 import {
   communicationAttachmentIdSchema,
+  communicationDispatchIdSchema,
   communicationIdSchema,
   communicationRecipientIdSchema,
   createCommunicationSchema,
@@ -15,9 +16,17 @@ import {
   updateCommunicationSchema,
 } from '../application/communication.schemas';
 import { CommunicationService } from '../application/communication.service';
+import {
+  COMMUNICATION_CHANNELS,
+  COMMUNICATION_DISPATCH_STATUSES,
+  COMMUNICATION_SOURCE_TYPES,
+  COMMUNICATION_STATUSES,
+} from '../domain/communication.constants';
+import { EMAIL_PROVIDERS } from '../domain/email-provider';
 import { CommunicationController } from './communication.controller';
 import { CommunicationRepositoryPrisma } from './communication.repository.prisma';
 import { R2FileStorage } from './file-storage.r2';
+import { MailtrapEmailProvider, ResendEmailProvider } from './providers';
 
 const TEN_MEGABYTES = 10 * 1024 * 1024;
 
@@ -58,14 +67,27 @@ const communicationAttachmentListResponseSchema = z.object({
   attachments: z.array(communicationAttachmentResponseSchema),
 });
 
+const communicationDispatchResponseSchema = z.object({
+  id: z.uuid(),
+  communicationId: z.uuid(),
+  attemptNumber: z.number(),
+  provider: z.enum(EMAIL_PROVIDERS),
+  status: z.enum(COMMUNICATION_DISPATCH_STATUSES),
+  startedAt: z.string(),
+  finishedAt: z.string().nullable(),
+});
+
+const communicationDispatchListResponseSchema = z.object({
+  dispatches: z.array(communicationDispatchResponseSchema),
+});
+
 const communicationResponseSchema = z.object({
   id: z.uuid(),
-  channel: z.enum(['email']),
-  sourceType: z.enum(['manual', 'template']),
-  status: z.enum(['draft', 'scheduled', 'processing', 'sent', 'failed', 'canceled']),
+  channel: z.enum(COMMUNICATION_CHANNELS),
+  sourceType: z.enum(COMMUNICATION_SOURCE_TYPES),
+  status: z.enum(COMMUNICATION_STATUSES),
   subject: z.string().nullable(),
   body: z.string().nullable(),
-  bodyType: z.enum(['text', 'html']).nullable(),
   templateVersionId: z.string().nullable(),
   templateVariablesJson: z.record(z.string(), z.unknown()).nullable(),
   scheduledAt: z.string().nullable(),
@@ -87,18 +109,17 @@ const communicationListResponseSchema = z.object({
 
 const communicationResponseExample = {
   id: '9a4dcf08-1060-4c48-bf13-e2e8498e7fca',
-  channel: 'email',
-  sourceType: 'template',
-  status: 'draft',
+  channel: COMMUNICATION_CHANNELS.EMAIL,
+  sourceType: COMMUNICATION_SOURCE_TYPES.TEMPLATE,
+  status: COMMUNICATION_STATUSES.SCHEDULED,
   subject: null,
   body: null,
-  bodyType: null,
   templateVersionId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
   templateVariablesJson: {
     name: 'João Silva',
   },
-  scheduledAt: null,
-  processingAt: null,
+  scheduledAt: '2026-05-16T14:15:22.000Z',
+  processingAt: '2026-05-16T14:15:22.000Z',
   sentAt: null,
   createdByUserId: '123e4567-e89b-12d3-a456-426614174000',
   createdAt: '2026-04-06T14:15:22.000Z',
@@ -134,20 +155,7 @@ const communicationWithAttachmentsResponseExample = {
 };
 
 const communicationListResponseExample = {
-  communications: [
-    communicationResponseExample,
-    {
-      ...communicationResponseExample,
-      id: 'dd9258c6-18a8-44b0-8842-6c5a7881f065',
-      channel: 'whatsapp',
-      sourceType: 'manual',
-      subject: null,
-      body: 'Seu pedido #123 foi confirmado!',
-      bodyType: 'text',
-      templateVersionId: null,
-      templateVariablesJson: null,
-    },
-  ],
+  communications: [communicationResponseExample],
 };
 
 const communicationAttachmentListResponseExample = {
@@ -166,6 +174,30 @@ const communicationAttachmentListResponseExample = {
   ],
 };
 
+const communicationDispatchResponseExample = {
+  id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+  communicationId: '9a4dcf08-1060-4c48-bf13-e2e8498e7fca',
+  attemptNumber: 1,
+  provider: EMAIL_PROVIDERS.RESEND,
+  status: COMMUNICATION_DISPATCH_STATUSES.PROCESSING,
+  startedAt: '2026-04-28T15:30:00.000Z',
+  finishedAt: null,
+};
+
+const communicationDispatchListResponseExample = {
+  dispatches: [
+    communicationDispatchResponseExample,
+    {
+      ...communicationDispatchResponseExample,
+      id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      attemptNumber: 2,
+      provider: EMAIL_PROVIDERS.MAILTRAP,
+      status: COMMUNICATION_DISPATCH_STATUSES.FAILED,
+      finishedAt: '2026-04-28T15:32:15.000Z',
+    },
+  ],
+};
+
 registry.register('CreateCommunication', createCommunicationSchema);
 registry.register('UpdateCommunication', updateCommunicationSchema);
 registry.register('CommunicationId', communicationIdSchema);
@@ -179,6 +211,9 @@ registry.register('CreateRecipient', createRecipientSchema);
 registry.register('CommunicationRecipientId', communicationRecipientIdSchema);
 registry.register('CommunicationRecipientResponse', communicationRecipientResponseSchema);
 registry.register('CommunicationRecipientListResponse', communicationRecipientListResponseSchema);
+registry.register('CommunicationDispatchId', communicationDispatchIdSchema);
+registry.register('CommunicationDispatchResponse', communicationDispatchResponseSchema);
+registry.register('CommunicationDispatchListResponse', communicationDispatchListResponseSchema);
 
 registry.registerPath({
   method: 'post',
@@ -196,13 +231,13 @@ registry.registerPath({
         'application/json': {
           schema: createCommunicationSchema,
           example: {
-            channel: 'email',
-            sourceType: 'template',
+            channel: COMMUNICATION_CHANNELS.EMAIL,
+            sourceType: COMMUNICATION_SOURCE_TYPES.TEMPLATE,
             templateVersionId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
             templateVariablesJson: {
               name: 'João Silva',
             },
-            scheduledAt: null,
+            scheduledAt: '2026-05-16T14:15:22.000Z',
             recipients: [
               {
                 recipientType: 'to',
@@ -295,7 +330,6 @@ registry.registerPath({
           example: {
             subject: 'Assunto atualizado',
             body: '<p>Conteúdo atualizado</p>',
-            bodyType: 'html',
             templateVariablesJson: {
               name: 'Maria Silva',
             },
@@ -511,14 +545,155 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: 'post',
+  path: `${BASE_PATH}/{id}/dispatches`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationIdSchema,
+  },
+  responses: {
+    201: {
+      description: 'Dispatch created successfully',
+    },
+    404: {
+      description: 'Communication not found',
+    },
+    400: {
+      description: 'Bad request',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: `${BASE_PATH}/{id}/dispatches`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationIdSchema,
+  },
+  responses: {
+    200: {
+      description: 'Dispatches retrieved successfully',
+      content: {
+        'application/json': {
+          schema: communicationDispatchListResponseSchema,
+          example: communicationDispatchListResponseExample,
+        },
+      },
+    },
+    404: {
+      description: 'Communication not found',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: `${BASE_PATH}/{id}/dispatches/{dispatchId}`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationDispatchIdSchema,
+  },
+  responses: {
+    200: {
+      description: 'Dispatch retrieved successfully',
+      content: {
+        'application/json': {
+          schema: communicationDispatchResponseSchema,
+          example: communicationDispatchResponseExample,
+        },
+      },
+    },
+    404: {
+      description: 'Dispatch not found',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: `${BASE_PATH}/{id}/dispatches/{dispatchId}/process`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationDispatchIdSchema,
+  },
+  responses: {
+    204: {
+      description: 'Dispatch processed successfully',
+    },
+    404: {
+      description: 'Dispatch not found',
+    },
+    400: {
+      description: 'Bad request',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: `${BASE_PATH}/dispatches/pending`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  responses: {
+    200: {
+      description: 'Pending dispatches retrieved successfully',
+      content: {
+        'application/json': {
+          schema: communicationDispatchListResponseSchema,
+          example: communicationDispatchListResponseExample,
+        },
+      },
+    },
+  },
+});
+
 export const communicationRoutes = () => {
   const router = Router();
 
   const repository = new CommunicationRepositoryPrisma(prisma);
   const templateVersionRepository = new TemplateVersionRepositoryPrisma(prisma);
+  const resendEmailProvider = new ResendEmailProvider();
+  const mailtrapEmailProvider = new MailtrapEmailProvider();
   const fileStorage = new R2FileStorage();
 
-  const service = new CommunicationService(repository, templateVersionRepository, fileStorage);
+  const service = new CommunicationService(
+    repository,
+    templateVersionRepository,
+    resendEmailProvider,
+    mailtrapEmailProvider,
+    fileStorage,
+  );
   const controller = new CommunicationController(service);
 
   router.post('/', controller.create.bind(controller));
@@ -534,6 +709,10 @@ export const communicationRoutes = () => {
   router.post('/:id/recipients', controller.addRecipient.bind(controller));
   router.get('/:id/recipients', controller.findRecipients.bind(controller));
   router.delete('/:id/recipients/:recipientId', controller.removeRecipient.bind(controller));
+
+  router.post('/:id/dispatches', controller.createInitialDispatch.bind(controller));
+  router.get('/:id/dispatches', controller.findDispatches.bind(controller));
+  router.get('/:id/dispatches/:dispatchId', controller.findDispatchById.bind(controller));
 
   return router;
 };

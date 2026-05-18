@@ -1,13 +1,20 @@
-export type TemplateVariableValue = string | number | boolean;
+import {
+  COMMUNICATION_SOURCE_TYPES,
+  COMMUNICATION_STATUSES,
+  CommunicationChannel,
+  CommunicationSourceType,
+  CommunicationStatus,
+} from '../communication.constants';
+
+export type TemplateVariableValue = string | number | boolean | Date;
 
 export type CommunicationProps = {
   id: string;
-  channel: 'email';
-  sourceType: 'manual' | 'template';
-  status: 'draft' | 'scheduled' | 'processing' | 'sent' | 'failed' | 'canceled';
+  channel: CommunicationChannel;
+  sourceType: CommunicationSourceType;
+  status: CommunicationStatus;
   subject: string | null;
   body: string | null;
-  bodyType: 'text' | 'html' | null;
   templateVersionId: string | null;
   templateVariablesJson: Record<string, TemplateVariableValue> | null;
   scheduledAt: Date | null;
@@ -22,18 +29,17 @@ export class CommunicationEntity {
   private constructor(readonly props: CommunicationProps) {}
 
   public static create(
-    channel: 'email',
-    sourceType: 'manual' | 'template',
-    status: 'draft' | 'scheduled' | 'processing' | 'sent' | 'failed' | 'canceled',
+    channel: CommunicationChannel,
+    sourceType: CommunicationSourceType,
+    status: CommunicationStatus,
     subject?: string | null,
     body?: string | null,
-    bodyType?: 'text' | 'html' | null,
     templateVersionId?: string | null,
     templateVariablesJson?: Record<string, TemplateVariableValue> | null,
     scheduledAt?: Date | null,
     createdByUserId?: string | null,
   ) {
-    if (sourceType === 'template' && !templateVersionId) {
+    if (sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE && !templateVersionId) {
       throw new Error('Template version ID is required when source type is template');
     }
 
@@ -44,7 +50,6 @@ export class CommunicationEntity {
       status,
       subject: subject ?? null,
       body: body ?? null,
-      bodyType: bodyType ?? null,
       templateVersionId: templateVersionId ?? null,
       templateVariablesJson: templateVariablesJson ?? null,
       scheduledAt: scheduledAt ?? null,
@@ -84,10 +89,6 @@ export class CommunicationEntity {
     return this.props.body;
   }
 
-  get bodyType() {
-    return this.props.bodyType;
-  }
-
   get templateVersionId() {
     return this.props.templateVersionId;
   }
@@ -121,39 +122,38 @@ export class CommunicationEntity {
   }
 
   public schedule(scheduledAt: Date) {
-    this.props.status = 'scheduled';
+    this.props.status = COMMUNICATION_STATUSES.SCHEDULED;
     this.props.scheduledAt = scheduledAt;
     this.props.updatedAt = new Date();
   }
 
-  public startProcessing() {
-    this.props.status = 'processing';
+  public markAsProcessing(): void {
+    this.props.status = COMMUNICATION_STATUSES.PROCESSING;
     this.props.processingAt = new Date();
-    this.props.updatedAt = new Date();
   }
 
   public markAsSent() {
-    this.props.status = 'sent';
+    this.props.status = COMMUNICATION_STATUSES.SENT;
     this.props.sentAt = new Date();
     this.props.updatedAt = new Date();
   }
 
   public markAsFailed() {
-    this.props.status = 'failed';
+    this.props.status = COMMUNICATION_STATUSES.FAILED;
     this.props.updatedAt = new Date();
   }
 
   public cancel() {
-    if (this.props.status === 'draft' || this.props.status === 'scheduled') {
-      this.props.status = 'canceled';
+    if (this.props.status === COMMUNICATION_STATUSES.SCHEDULED) {
+      this.props.status = COMMUNICATION_STATUSES.CANCELED;
       this.props.updatedAt = new Date();
     } else {
-      throw new Error('Cannot cancel a communication that is not in draft or scheduled status');
+      throw new Error('Cannot cancel a communication that is not in scheduled status');
     }
   }
 
   public updateSubject(subject: string) {
-    if (this.props.status !== 'draft' && this.props.status !== 'scheduled') {
+    if (this.props.status !== COMMUNICATION_STATUSES.SCHEDULED) {
       throw new Error('Cannot update subject after communication is queued, processing, sent, failed or canceled');
     }
     this.props.subject = subject;
@@ -161,23 +161,15 @@ export class CommunicationEntity {
   }
 
   public updateBody(body: string) {
-    if (this.props.status !== 'draft' && this.props.status !== 'scheduled') {
+    if (this.props.status !== COMMUNICATION_STATUSES.SCHEDULED) {
       throw new Error('Cannot update body after communication is queued, processing, sent, failed or canceled');
     }
     this.props.body = body;
     this.props.updatedAt = new Date();
   }
 
-  public updateBodyType(bodyType: 'text' | 'html') {
-    if (this.props.status !== 'draft' && this.props.status !== 'scheduled') {
-      throw new Error('Cannot update body type after communication is queued, processing, sent, failed or canceled');
-    }
-    this.props.bodyType = bodyType;
-    this.props.updatedAt = new Date();
-  }
-
   public updateTemplateVariables(variables: Record<string, TemplateVariableValue>) {
-    if (this.props.status !== 'draft' && this.props.status !== 'scheduled') {
+    if (this.props.status !== COMMUNICATION_STATUSES.SCHEDULED) {
       throw new Error(
         'Cannot update template variables after communication is queued, processing, sent, failed or canceled',
       );
@@ -187,7 +179,7 @@ export class CommunicationEntity {
   }
 
   public updateScheduledAt(scheduledAt: Date | null) {
-    if (this.props.status !== 'draft' && this.props.status !== 'scheduled') {
+    if (this.props.status !== COMMUNICATION_STATUSES.SCHEDULED) {
       throw new Error(
         'Cannot update scheduled date after communication is queued, processing, sent, failed or canceled',
       );

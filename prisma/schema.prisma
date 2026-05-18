@@ -37,7 +37,6 @@ model TemplateVersion {
   version               Int
   subject               String          @db.VarChar(255)
   body                  String
-  body_type             String          @db.VarChar(20)
   variables_schema_json Json?
   is_active             Boolean         @default(true)
   created_at            DateTime        @default(now())
@@ -57,7 +56,6 @@ model Communication {
   status                  String           @db.VarChar(30)
   subject                 String?          @db.VarChar(255)
   body                    String?
-  body_type               String?          @db.VarChar(20)
   template_version_id     String?
   template_variables_json Json?
   scheduled_at            DateTime?
@@ -72,6 +70,7 @@ model Communication {
 
   attachments             CommunicationAttachment[]
   recipients              CommunicationRecipient[]
+  dispatches              CommunicationDispatch[]
 
   @@map("communications")
 }
@@ -102,4 +101,19 @@ model CommunicationRecipient {
   communication Communication @relation(fields: [communication_id], references: [id], onDelete: Cascade)
 
   @@map("communication_recipients")
+}
+
+model CommunicationDispatch {
+  id String @id @default(uuid())
+  communication_id String
+  attempt_number Int
+  provider String @db.VarChar(50)
+  status String @db.VarChar(20)
+  started_at DateTime
+  finished_at DateTime?
+
+  communication Communication @relation(fields: [communication_id], references: [id], onDelete: Cascade)
+
+  @@index([communication_id, attempt_number])
+  @@map("communication_dispatches")
 }

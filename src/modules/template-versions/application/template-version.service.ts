@@ -32,7 +32,6 @@ export class TemplateVersionService {
       latestVersion + 1,
       input.subject,
       input.body,
-      input.bodyType,
       input.variablesSchemaJson,
     );
 
@@ -78,10 +77,6 @@ export class TemplateVersionService {
 
     if (input.body !== undefined) {
       templateVersion.updateBody(input.body);
-    }
-
-    if (input.bodyType !== undefined) {
-      templateVersion.updateBodyType(input.bodyType);
     }
 
     if (input.variablesSchemaJson !== undefined) {
@@ -138,7 +133,6 @@ export class TemplateVersionService {
       version: templateVersion.version,
       subject: templateVersion.subject,
       body: templateVersion.body,
-      bodyType: templateVersion.bodyType,
       variablesSchemaJson: templateVersion.variablesSchemaJson,
       isActive: templateVersion.isActive,
       createdAt: templateVersion.createdAt,
