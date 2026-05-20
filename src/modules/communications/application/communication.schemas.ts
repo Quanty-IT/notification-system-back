@@ -25,15 +25,18 @@ export const createCommunicationSchema = z
     subject: z.string().max(255).nullable().optional(),
     body: z.string().nullable().optional(),
     templateVersionId: z.string().nullable().optional(),
-    templateVariablesJson: templateVariablesJsonSchema.nullable().optional(),
+    templateVariablesJson: templateVariablesJsonSchema.optional(),
     scheduledAt: z.coerce.date().nullable().optional(),
     recipients: z.array(createRecipientSchema).min(1, 'At least one recipient is required'),
   })
+
+  // TEMPLATE: templateVersionId obrigatório
   .refine(
     (data) => {
       if (data.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
         return data.templateVersionId !== null && data.templateVersionId !== undefined;
       }
+
       return true;
     },
     {
@@ -41,11 +44,14 @@ export const createCommunicationSchema = z
       path: ['templateVersionId'],
     },
   )
+
+  // TEMPLATE: body não pode ser enviado manualmente
   .refine(
     (data) => {
       if (data.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
-        return data.body === undefined;
+        return data.body === null || data.body === undefined;
       }
+
       return true;
     },
     {
@@ -53,11 +59,14 @@ export const createCommunicationSchema = z
       path: ['body'],
     },
   )
+
+  // MANUAL: templateVersionId e templateVariablesJson não podem ser enviados
   .refine(
     (data) => {
       if (data.sourceType === COMMUNICATION_SOURCE_TYPES.MANUAL) {
         return data.templateVersionId === undefined && data.templateVariablesJson === undefined;
       }
+
       return true;
     },
     {
@@ -65,16 +74,49 @@ export const createCommunicationSchema = z
       path: ['templateVersionId'],
     },
   )
+
+  // MANUAL: subject obrigatório
   .refine(
     (data) => {
-      const recipients = data.recipients;
-      const uniqueRecipients = new Set();
+      if (data.sourceType === COMMUNICATION_SOURCE_TYPES.MANUAL) {
+        return typeof data.subject === 'string' && data.subject.trim().length > 0;
+      }
 
-      for (const recipient of recipients) {
+      return true;
+    },
+    {
+      message: 'subject is required when sourceType is manual',
+      path: ['subject'],
+    },
+  )
+
+  // MANUAL: body obrigatório
+  .refine(
+    (data) => {
+      if (data.sourceType === COMMUNICATION_SOURCE_TYPES.MANUAL) {
+        return typeof data.body === 'string' && data.body.trim().length > 0;
+      }
+
+      return true;
+    },
+    {
+      message: 'body is required when sourceType is manual',
+      path: ['body'],
+    },
+  )
+
+  // Recipients únicos por email + recipientType
+  .refine(
+    (data) => {
+      const uniqueRecipients = new Set<string>();
+
+      for (const recipient of data.recipients) {
         const key = `${recipient.email.toLowerCase()}_${recipient.recipientType}`;
+
         if (uniqueRecipients.has(key)) {
           return false;
         }
+
         uniqueRecipients.add(key);
       }
 
