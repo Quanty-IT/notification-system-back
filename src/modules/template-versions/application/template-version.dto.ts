@@ -5,6 +5,10 @@ import { createTemplateVersionSchema, updateTemplateVersionSchema } from './temp
 export type CreateTemplateVersionInput = z.infer<typeof createTemplateVersionSchema>;
 export type UpdateTemplateVersionInput = z.infer<typeof updateTemplateVersionSchema>;
 
+export type FindTemplateVersionsByTemplateInput = {
+  isActive?: boolean;
+};
+
 export type TemplateVersionOutput = {
   id: string;
   templateId: string;

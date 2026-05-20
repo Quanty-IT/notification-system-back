@@ -4,6 +4,10 @@ import { createTemplateSchema, updateTemplateSchema } from './template.schemas';
 export type CreateTemplateInput = z.infer<typeof createTemplateSchema>;
 export type UpdateTemplateInput = z.infer<typeof updateTemplateSchema>;
 
+export type FindAllTemplatesInput = {
+  isActive?: boolean;
+};
+
 export type TemplateOutput = {
   id: string;
   name: string;

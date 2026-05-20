@@ -46,25 +46,6 @@ const templateVersionResponseExample = {
   updatedAt: '2026-04-06T14:15:22.000Z',
 };
 
-const templateVersionListResponseExample = {
-  templateVersions: [
-    templateVersionResponseExample,
-    {
-      id: 'dd9258c6-18a8-44b0-8842-6c5a7881f065',
-      templateId: '4e73dc89-c44e-4f89-bb31-f93eec4c264d',
-      version: 1,
-      subject: 'Bem-vindo ao sistema',
-      body: 'Ola {{name}}, seu cadastro foi criado com sucesso.',
-      variablesSchemaJson: {
-        name: 'string',
-      },
-      isActive: false,
-      createdAt: '2026-04-05T10:00:00.000Z',
-      updatedAt: '2026-04-06T08:30:00.000Z',
-    },
-  ],
-};
-
 registry.register('CreateTemplateVersion', createTemplateVersionSchema);
 registry.register('UpdateTemplateVersion', updateTemplateVersionSchema);
 registry.register('TemplateVersionId', templateVersionIdSchema);
@@ -106,32 +87,6 @@ registry.registerPath({
         'application/json': {
           schema: templateVersionResponseSchema,
           example: templateVersionResponseExample,
-        },
-      },
-    },
-  },
-});
-
-registry.registerPath({
-  method: 'get',
-  path: `${BASE_PATH}/template/{templateId}`,
-  tags: [TAG],
-  security: [
-    {
-      bearerAuth: [],
-      apiKeyAuth: [],
-    },
-  ],
-  request: {
-    params: templateVersionTemplateIdSchema,
-  },
-  responses: {
-    200: {
-      description: 'List template versions by template',
-      content: {
-        'application/json': {
-          schema: templateVersionListResponseSchema,
-          example: templateVersionListResponseExample,
         },
       },
     },
@@ -291,7 +246,6 @@ export const templateVersionRoutes = () => {
   const controller = new TemplateVersionController(service);
 
   router.post('/', controller.create.bind(controller));
-  router.get('/template/:templateId', controller.findAllByTemplateId.bind(controller));
   router.get('/:id', controller.findById.bind(controller));
   router.patch('/:id', controller.update.bind(controller));
   router.patch('/:id/activate', controller.activate.bind(controller));

@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
+import { templateIdSchema } from '@/modules/templates/application/template.schemas';
 import {
+  activeFilterSchema,
   createTemplateVersionSchema,
   templateVersionIdSchema,
-  templateVersionTemplateIdSchema,
   updateTemplateVersionSchema,
 } from '../application/template-version.schemas';
 import { TemplateVersionService } from '../application/template-version.service';
@@ -18,10 +19,11 @@ export class TemplateVersionController {
     return response.status(201).json(output);
   }
 
-  public async findAllByTemplateId(request: Request<{ templateId: string }>, response: Response) {
-    const { templateId } = templateVersionTemplateIdSchema.parse(request.params);
+  public async findAllByTemplateId(request: Request<{ id: string }>, response: Response) {
+    const { id } = templateIdSchema.parse(request.params);
+    const query = activeFilterSchema.parse(request.query);
 
-    const output = await this.service.findAllByTemplateId(templateId);
+    const output = await this.service.findAllByTemplateId(id, query);
 
     return response.status(200).json(output);
   }

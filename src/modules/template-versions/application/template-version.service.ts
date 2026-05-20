@@ -6,6 +6,7 @@ import { TemplateVersionRepository } from '../domain/template-version.repository
 import {
   CreateTemplateVersionInput,
   CreateTemplateVersionOutput,
+  FindTemplateVersionsByTemplateInput,
   FindTemplateVersionsByTemplateOutput,
   GetTemplateVersionOutput,
   UpdateTemplateVersionInput,
@@ -40,7 +41,10 @@ export class TemplateVersionService {
     return this.toOutput(templateVersion);
   }
 
-  async findAllByTemplateId(templateId: string): Promise<FindTemplateVersionsByTemplateOutput> {
+  async findAllByTemplateId(
+    templateId: string,
+    input?: FindTemplateVersionsByTemplateInput,
+  ): Promise<FindTemplateVersionsByTemplateOutput> {
     const templateExists = await this.templateRepository.findById(templateId);
 
     if (!templateExists) {
@@ -48,9 +52,13 @@ export class TemplateVersionService {
     }
 
     const templateVersions = await this.repository.findAllByTemplateId(templateId);
+    const filteredTemplateVersions =
+      input?.isActive === undefined
+        ? templateVersions
+        : templateVersions.filter((templateVersion) => templateVersion.isActive === input.isActive);
 
     return {
-      templateVersions: templateVersions.map((templateVersion) => this.toOutput(templateVersion)),
+      templateVersions: filteredTemplateVersions.map((templateVersion) => this.toOutput(templateVersion)),
     };
   }
 

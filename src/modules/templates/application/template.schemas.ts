@@ -24,6 +24,26 @@ export const updateTemplateSchema = z.object({
   description: z.string().max(200, 'Description must have at most 200 characters').nullable().optional(),
 });
 
+export const activeFilterSchema = z
+  .object({
+    isActive: z.preprocess((value) => {
+      if (value === undefined) return undefined;
+      if (value === 'true') return true;
+      if (value === 'false') return false;
+
+      return value;
+    }, z.boolean().optional()),
+  })
+  .transform((data) => {
+    if (data.isActive === undefined) {
+      return {};
+    }
+
+    return {
+      isActive: data.isActive,
+    };
+  });
+
 export const templateIdSchema = z.object({
   id: z.uuid('Invalid UUID'),
 });

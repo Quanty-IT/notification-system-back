@@ -1,10 +1,12 @@
 import createHttpError from 'http-errors';
-
+import { FindTemplateVersionsByTemplateOutput } from '@/modules/template-versions/application/template-version.dto';
+import { TemplateVersionRepository } from '@/modules/template-versions/domain/template-version.repository';
 import { TemplateEntity } from '../domain/template.entity';
 import { TemplateRepository } from '../domain/template.repository';
 import {
   CreateTemplateInput,
   CreateTemplateOutput,
+  FindAllTemplatesInput,
   FindAllTemplatesOutput,
   GetTemplateOutput,
   TemplateOutput,
@@ -13,7 +15,10 @@ import {
 } from './template.dto';
 
 export class TemplateService {
-  constructor(private readonly repository: TemplateRepository) {}
+  constructor(
+    private readonly repository: TemplateRepository,
+    private readonly templateVersionRepository: TemplateVersionRepository,
+  ) {}
 
   async create(input: CreateTemplateInput): Promise<CreateTemplateOutput> {
     const templateExists = await this.repository.findByName(input.name);
@@ -29,10 +34,13 @@ export class TemplateService {
     return this.toOutput(template);
   }
 
-  async findAll(): Promise<FindAllTemplatesOutput> {
+  async findAll(input?: FindAllTemplatesInput): Promise<FindAllTemplatesOutput> {
     const templates = await this.repository.findAll();
 
-    const templatesOrderedByStatusAndCreationDate = templates.sort((currentTemplate, nextTemplate) => {
+    const filteredTemplates =
+      input?.isActive === undefined ? templates : templates.filter((template) => template.isActive === input.isActive);
+
+    const templatesOrderedByStatusAndCreationDate = filteredTemplates.sort((currentTemplate, nextTemplate) => {
       if (currentTemplate.isActive !== nextTemplate.isActive) {
         return currentTemplate.isActive ? -1 : 1;
       }
@@ -53,6 +61,35 @@ export class TemplateService {
     }
 
     return this.toOutput(template);
+  }
+
+  async findVersionsByTemplateId(
+    templateId: string,
+    input?: { isActive?: boolean },
+  ): Promise<FindTemplateVersionsByTemplateOutput> {
+    const template = await this.repository.findById(templateId);
+
+    if (!template) {
+      throw new createHttpError.NotFound(`Template ${templateId} not found`);
+    }
+
+    const versions = await this.templateVersionRepository.findAllByTemplateId(templateId);
+    const filteredVersions =
+      input?.isActive === undefined ? versions : versions.filter((version) => version.isActive === input.isActive);
+
+    return {
+      templateVersions: filteredVersions.map((version) => ({
+        id: version.id,
+        templateId: version.templateId,
+        version: version.version,
+        subject: version.subject,
+        body: version.body,
+        variablesSchemaJson: version.variablesSchemaJson,
+        isActive: version.isActive,
+        createdAt: version.createdAt,
+        updatedAt: version.updatedAt,
+      })),
+    };
   }
 
   async update(id: string, input: UpdateTemplateInput): Promise<UpdateTemplateOutput> {

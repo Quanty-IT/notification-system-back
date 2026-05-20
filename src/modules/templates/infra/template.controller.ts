@@ -1,5 +1,10 @@
 import { Request, Response } from 'express';
-import { createTemplateSchema, templateIdSchema, updateTemplateSchema } from '../application/template.schemas';
+import {
+  activeFilterSchema,
+  createTemplateSchema,
+  templateIdSchema,
+  updateTemplateSchema,
+} from '../application/template.schemas';
 import { TemplateService } from '../application/template.service';
 
 export class TemplateController {
@@ -13,8 +18,10 @@ export class TemplateController {
     return response.status(201).json(output);
   }
 
-  public async findAll(_request: Request, response: Response) {
-    const output = await this.service.findAll();
+  public async findAll(request: Request, response: Response) {
+    const query = activeFilterSchema.parse(request.query);
+
+    const output = await this.service.findAll(query);
 
     return response.status(200).json(output);
   }
@@ -23,6 +30,15 @@ export class TemplateController {
     const { id } = templateIdSchema.parse(request.params);
 
     const output = await this.service.findById(id);
+
+    return response.status(200).json(output);
+  }
+
+  public async findVersionsByTemplateId(request: Request<{ id: string }>, response: Response) {
+    const { id } = templateIdSchema.parse(request.params);
+    const query = activeFilterSchema.parse(request.query);
+
+    const output = await this.service.findVersionsByTemplateId(id, query);
 
     return response.status(200).json(output);
   }

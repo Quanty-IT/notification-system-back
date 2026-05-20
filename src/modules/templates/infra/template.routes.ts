@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '@/infra/database/prisma.client';
 import { registry } from '@/infra/swagger/swagger.registry';
+import { TemplateVersionRepositoryPrisma } from '@/modules/template-versions/infra/template-version.repository.prisma';
 import { createTemplateSchema, templateIdSchema, updateTemplateSchema } from '../application/template.schemas';
 import { TemplateService } from '../application/template.service';
 import { TemplateController } from './template.controller';
@@ -72,6 +73,29 @@ registry.registerPath({
   responses: {
     200: {
       description: 'Template found',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: `${BASE_PATH}/{id}/versions`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: templateIdSchema,
+  },
+  responses: {
+    200: {
+      description: 'List template versions by template',
+    },
+    404: {
+      description: 'Template not found',
     },
   },
 });
@@ -167,12 +191,17 @@ export const templateRoutes = () => {
   const router = Router();
 
   const repository = new TemplateRepositoryPrisma(prisma);
-  const service = new TemplateService(repository);
+  const templateVersionRepository = new TemplateVersionRepositoryPrisma(prisma);
+
+  const service = new TemplateService(repository, templateVersionRepository);
   const controller = new TemplateController(service);
 
   router.post('/', controller.create.bind(controller));
+
   router.get('/', controller.findAll.bind(controller));
   router.get('/:id', controller.findById.bind(controller));
+  router.get('/:id/versions', controller.findVersionsByTemplateId.bind(controller));
+
   router.patch('/:id', controller.update.bind(controller));
   router.patch('/:id/activate', controller.activate.bind(controller));
   router.patch('/:id/deactivate', controller.deactivate.bind(controller));
