@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 extendZodWithOpenApi(z);
 
-const variableTypeSchema = z.enum(['string', 'number', 'boolean']);
+export const variableTypeSchema = z.enum(['string', 'number', 'boolean', 'date']);
+
 export const variablesSchemaJsonSchema = z.record(z.string(), variableTypeSchema).nullable();
 
 export const createTemplateVersionSchema = z.object({

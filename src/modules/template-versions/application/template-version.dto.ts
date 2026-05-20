@@ -1,5 +1,5 @@
-import { TemplateVariableValue } from 'resend';
 import { z } from 'zod';
+import { TemplateVersionVariableType } from '../domain/template-version.entity';
 import { createTemplateVersionSchema, updateTemplateVersionSchema } from './template-version.schemas';
 
 export type CreateTemplateVersionInput = z.infer<typeof createTemplateVersionSchema>;
@@ -11,7 +11,7 @@ export type TemplateVersionOutput = {
   version: number;
   subject: string;
   body: string;
-  variablesSchemaJson: Record<string, TemplateVariableValue> | null;
+  variablesSchemaJson: Record<string, TemplateVersionVariableType> | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

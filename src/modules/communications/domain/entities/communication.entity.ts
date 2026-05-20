@@ -121,9 +121,31 @@ export class CommunicationEntity {
     return this.props.updatedAt;
   }
 
+  public isDraft(): boolean {
+    return this.status === COMMUNICATION_STATUSES.DRAFT;
+  }
+
+  public isScheduled(): boolean {
+    return this.status === COMMUNICATION_STATUSES.SCHEDULED;
+  }
+
+  public canBeEdited(): boolean {
+    return this.isDraft() || this.isScheduled();
+  }
+
   public schedule(scheduledAt: Date) {
-    this.props.status = COMMUNICATION_STATUSES.SCHEDULED;
+    this.markAsScheduled();
     this.props.scheduledAt = scheduledAt;
+    this.props.updatedAt = new Date();
+  }
+
+  public markAsScheduled(): void {
+    if (this.status !== COMMUNICATION_STATUSES.DRAFT && this.status !== COMMUNICATION_STATUSES.SCHEDULED) {
+      throw new Error('Only draft or scheduled communications can be scheduled');
+    }
+
+    this.props.status = COMMUNICATION_STATUSES.SCHEDULED;
+    this.props.processingAt = null;
     this.props.updatedAt = new Date();
   }
 

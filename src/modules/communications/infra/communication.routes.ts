@@ -374,6 +374,32 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
+  path: `${BASE_PATH}/{id}/send`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationIdSchema,
+  },
+  responses: {
+    204: {
+      description: 'Communication sent successfully',
+    },
+    400: {
+      description: 'Communication cannot be sent',
+    },
+    404: {
+      description: 'Communication not found',
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
   path: `${BASE_PATH}/{id}/attachments`,
   tags: [TAG],
   security: [
@@ -701,6 +727,8 @@ export const communicationRoutes = () => {
   router.get('/:id', controller.findById.bind(controller));
   router.patch('/:id', controller.update.bind(controller));
   router.delete('/:id', controller.delete.bind(controller));
+
+  router.post('/:id/send', controller.sendNow.bind(controller));
 
   router.post('/:id/attachments', upload.single('file'), controller.addAttachment.bind(controller));
   router.get('/:id/attachments', controller.findAttachments.bind(controller));

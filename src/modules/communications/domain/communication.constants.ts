@@ -12,6 +12,7 @@ export const COMMUNICATION_SOURCE_TYPES = {
 export type CommunicationSourceType = (typeof COMMUNICATION_SOURCE_TYPES)[keyof typeof COMMUNICATION_SOURCE_TYPES];
 
 export const COMMUNICATION_STATUSES = {
+  DRAFT: 'draft',
   SCHEDULED: 'scheduled',
   PROCESSING: 'processing',
   SENT: 'sent',

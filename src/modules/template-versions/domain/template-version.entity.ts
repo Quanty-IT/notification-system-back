@@ -1,4 +1,4 @@
-export type TemplateVersionVariableType = 'string' | 'number' | 'boolean';
+export type TemplateVersionVariableType = 'string' | 'number' | 'boolean' | 'date';
 
 export type TemplateVersionProps = {
   id: string;

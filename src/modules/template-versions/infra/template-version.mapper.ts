@@ -24,7 +24,8 @@ export class TemplateVersionMapper {
       version: templateVersion.version,
       subject: templateVersion.subject,
       body: templateVersion.body,
-      variables_schema_json: templateVersion.variablesSchemaJson === null,
+      variables_schema_json:
+        (templateVersion.variablesSchemaJson as Record<string, TemplateVersionVariableType> | null) ?? null,
       is_active: templateVersion.isActive,
       created_at: templateVersion.createdAt,
       updated_at: templateVersion.updatedAt,

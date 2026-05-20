@@ -56,6 +56,14 @@ export class CommunicationController {
     return response.status(204).send();
   }
 
+  public async sendNow(request: Request<{ id: string }>, response: Response) {
+    const { id } = communicationIdSchema.parse(request.params);
+
+    await this.service.sendNow(id);
+
+    return response.status(204).send();
+  }
+
   public async addAttachment(request: Request<{ id: string }>, response: Response) {
     const { id } = communicationIdSchema.parse(request.params);
 

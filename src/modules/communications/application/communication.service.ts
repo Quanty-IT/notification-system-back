@@ -57,38 +57,9 @@ export class CommunicationService {
   ) {}
 
   async create(input: CreateCommunicationInput, createdByUserId: string): Promise<CreateCommunicationOutput> {
-    if (input.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
-      if (!input.templateVersionId) {
-        throw new createHttpError.BadRequest('Template version ID is required when source type is template');
-      }
+    await this.validateTemplateInput(input);
 
-      const templateVersionExists = await this.templateVersionRepository.findById(input.templateVersionId);
-      if (!templateVersionExists) {
-        throw new createHttpError.NotFound(`Template version ${input.templateVersionId} not found`);
-      }
-
-      if (!templateVersionExists.isActive) {
-        throw new createHttpError.BadRequest(`Template version ${input.templateVersionId} is not active`);
-      }
-
-      if (templateVersionExists.variablesSchemaJson && !input.templateVariablesJson) {
-        throw new createHttpError.BadRequest('Template variables JSON is required when template has variables');
-      }
-
-      if (templateVersionExists.variablesSchemaJson && input.templateVariablesJson) {
-        const templateVariables = Object.keys(templateVersionExists.variablesSchemaJson);
-        const providedVariables = Object.keys(input.templateVariablesJson);
-
-        const missingVariables = templateVariables.filter((variable) => !providedVariables.includes(variable));
-
-        if (missingVariables.length > 0) {
-          throw new createHttpError.BadRequest(`Missing required template variables: ${missingVariables.join(', ')}`);
-        }
-      }
-    }
-
-    const shouldSendImmediately = input.scheduledAt === undefined;
-    const status = shouldSendImmediately ? COMMUNICATION_STATUSES.PROCESSING : COMMUNICATION_STATUSES.SCHEDULED;
+    const status = input.scheduledAt ? COMMUNICATION_STATUSES.SCHEDULED : COMMUNICATION_STATUSES.DRAFT;
 
     const communication = CommunicationEntity.create(
       input.channel,
@@ -101,10 +72,6 @@ export class CommunicationService {
       input.scheduledAt,
       createdByUserId,
     );
-
-    if (shouldSendImmediately) {
-      communication.markAsProcessing();
-    }
 
     await this.repository.create(communication);
 
@@ -126,6 +93,7 @@ export class CommunicationService {
         recipientData.recipientType,
         recipientData.email,
       );
+
       await this.repository.createRecipient(recipient);
     }
 
@@ -166,42 +134,37 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${id} not found`);
     }
 
+    if (!communication.canBeEdited()) {
+      throw new createHttpError.BadRequest('Only draft or scheduled communications can be updated');
+    }
+
     if (input.templateVersionId !== undefined) {
       if (communication.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE && !input.templateVersionId) {
         throw new createHttpError.BadRequest('Template version ID is required for template source type');
       }
 
-      if (input.templateVersionId !== undefined && input.templateVersionId !== null) {
+      if (input.templateVersionId !== null) {
         const templateVersionExists = await this.templateVersionRepository.findById(input.templateVersionId);
+
         if (!templateVersionExists) {
           throw new createHttpError.NotFound(`Template version ${input.templateVersionId} not found`);
+        }
+
+        if (!templateVersionExists.isActive) {
+          throw new createHttpError.BadRequest(`Template version ${input.templateVersionId} is not active`);
         }
       }
     }
 
-    if (input.templateVariablesJson !== undefined) {
-      if (
-        communication.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE &&
-        !input.templateVariablesJson &&
-        communication.templateVersionId
-      ) {
-        throw new createHttpError.BadRequest('Template variables JSON is required for template source type');
-      }
-    }
-
-    if (input.subject !== undefined) {
-      if (input.subject !== null) {
-        communication.updateSubject(input.subject);
-      }
+    if (input.subject !== undefined && input.subject !== null) {
+      communication.updateSubject(input.subject);
     }
 
     if (input.body !== undefined) {
       if (communication.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
         throw new createHttpError.BadRequest('body can only be updated for manual communications');
       }
-    }
 
-    if (input.body !== undefined) {
       if (input.body !== null) {
         communication.updateBody(input.body);
       }
@@ -211,16 +174,14 @@ export class CommunicationService {
       if (communication.sourceType === COMMUNICATION_SOURCE_TYPES.MANUAL) {
         throw new createHttpError.BadRequest('templateVariablesJson can only be updated for template communications');
       }
-    }
 
-    if (input.templateVariablesJson !== undefined) {
       if (input.templateVariablesJson !== null) {
         communication.updateTemplateVariables(input.templateVariablesJson);
       }
     }
 
     if (input.scheduledAt !== undefined) {
-      communication.updateScheduledAt(input.scheduledAt);
+      communication.schedule(input.scheduledAt);
     }
 
     await this.repository.update(communication);
@@ -245,6 +206,25 @@ export class CommunicationService {
     await this.repository.delete(id);
   }
 
+  async sendNow(communicationId: string): Promise<void> {
+    const communication = await this.repository.findById(communicationId);
+
+    if (!communication) {
+      throw createHttpError.NotFound(`Communication ${communicationId} not found`);
+    }
+
+    if (!communication.canBeEdited()) {
+      throw createHttpError.BadRequest('Communication cannot be sent');
+    }
+
+    communication.updateScheduledAt(null);
+    communication.markAsScheduled();
+
+    await this.repository.update(communication);
+
+    await this.processCommunication(communication.id);
+  }
+
   async addAttachment(communicationId: string, input: AddAttachmentInput): Promise<CommunicationAttachmentOutput> {
     const communication = await this.repository.findById(communicationId);
 
@@ -252,8 +232,8 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
-    if (communication.status !== 'scheduled') {
-      throw new createHttpError.BadRequest('Attachments can only be added to scheduled communications');
+    if (!communication.canBeEdited()) {
+      throw new createHttpError.BadRequest('Attachments can only be added to draft or scheduled communications');
     }
 
     if (input.fileSizeBytes <= 0) {
@@ -305,8 +285,8 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
-    if (communication.status !== 'scheduled') {
-      throw new createHttpError.BadRequest('Attachments can only be removed from scheduled communications');
+    if (!communication.canBeEdited()) {
+      throw new createHttpError.BadRequest('Attachments can only be removed from draft or scheduled communications');
     }
 
     const attachment = await this.repository.findAttachmentById(attachmentId);
@@ -326,8 +306,8 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
-    if (communication.status !== 'scheduled') {
-      throw new createHttpError.BadRequest('Recipients can only be added to scheduled communications');
+    if (!communication.canBeEdited()) {
+      throw new createHttpError.BadRequest('Recipients can only be added to draft or scheduled communications');
     }
 
     const existingRecipient = await this.repository.findRecipientByEmailAndType(
@@ -356,8 +336,8 @@ export class CommunicationService {
       throw new createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
-    if (communication.status !== 'scheduled') {
-      throw new createHttpError.BadRequest('Recipients can only be removed from scheduled communications');
+    if (!communication.canBeEdited()) {
+      throw new createHttpError.BadRequest('Recipients can only be removed from draft or scheduled communications');
     }
 
     const recipient = await this.repository.findRecipientById(recipientId);
@@ -383,86 +363,22 @@ export class CommunicationService {
     };
   }
 
-  private toOutput(communication: CommunicationEntity): UpdateCommunicationOutput {
-    return {
-      id: communication.id,
-      channel: communication.channel,
-      sourceType: communication.sourceType,
-      status: communication.status,
-      subject: communication.subject,
-      body: communication.body,
-      templateVersionId: communication.templateVersionId,
-      templateVariablesJson: communication.templateVariablesJson,
-      scheduledAt: communication.scheduledAt,
-      processingAt: communication.processingAt,
-      sentAt: communication.sentAt,
-      createdByUserId: communication.createdByUserId,
-      createdAt: communication.createdAt,
-      updatedAt: communication.updatedAt,
-    };
-  }
-
-  private toAttachmentOutput(attachment: CommunicationAttachmentEntity): CommunicationAttachmentOutput {
-    return {
-      id: attachment.id,
-      communicationId: attachment.communicationId,
-      originalFileName: attachment.originalFileName,
-      storageProvider: attachment.storageProvider,
-      storageKey: attachment.storageKey,
-      fileUrl: `${process.env.CLOUDFLARE_PUBLIC_URL}/${attachment.storageKey}`,
-      mimeType: attachment.mimeType,
-      fileSizeBytes: attachment.fileSizeBytes,
-      createdAt: attachment.createdAt,
-    };
-  }
-
-  private toRecipientOutput(recipient: CommunicationRecipientEntity): CommunicationRecipientOutput {
-    return {
-      id: recipient.id,
-      communicationId: recipient.communicationId,
-      recipientType: recipient.recipientType,
-      email: recipient.email,
-      createdAt: recipient.createdAt,
-    };
-  }
-
-  private toDispatchOutput(dispatch: CommunicationDispatchEntity): CommunicationDispatchOutput {
-    return {
-      id: dispatch.id,
-      communicationId: dispatch.communicationId,
-      attemptNumber: dispatch.attemptNumber,
-      provider: dispatch.provider,
-      status: dispatch.status,
-      startedAt: dispatch.startedAt,
-      finishedAt: dispatch.finishedAt,
-    };
-  }
-
   async createInitialDispatch(communicationId: string): Promise<void> {
     const communication = await this.repository.findById(communicationId);
+
     if (!communication) {
       throw createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
     const existingDispatch = await this.repository.findLastDispatchByCommunicationId(communicationId);
+
     if (existingDispatch?.isProcessing()) {
       throw createHttpError.BadRequest('Communication already has a dispatch in progress');
     }
 
     const dispatch = CommunicationDispatchEntity.create(communicationId);
+
     await this.repository.createDispatch(dispatch);
-  }
-
-  private getEmailProvider(provider: EmailProviderName): EmailProvider {
-    if (provider === EMAIL_PROVIDERS.RESEND) {
-      return this.resendEmailProvider;
-    }
-
-    if (provider === EMAIL_PROVIDERS.MAILTRAP) {
-      return this.mailtrapEmailProvider;
-    }
-
-    throw createHttpError.BadRequest(`Unsupported email provider: ${provider}`);
   }
 
   async processCommunication(communicationId: string): Promise<void> {
@@ -481,8 +397,7 @@ export class CommunicationService {
 
     let lastError: unknown;
 
-    const providers = EMAIL_PROVIDER_FALLBACK_ORDER;
-    for (const provider of providers) {
+    for (const provider of EMAIL_PROVIDER_FALLBACK_ORDER) {
       const dispatch = CommunicationDispatchEntity.createWithNewProvider(communication.id, provider);
 
       try {
@@ -516,16 +431,19 @@ export class CommunicationService {
 
   async createDispatchWithNewProvider(communicationId: string, provider: EmailProviderName): Promise<void> {
     const communication = await this.repository.findById(communicationId);
+
     if (!communication) {
       throw createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
 
     const lastDispatch = await this.repository.findLastDispatchByCommunicationId(communicationId);
+
     if (!lastDispatch?.needsNewProvider()) {
       throw createHttpError.BadRequest('Cannot create dispatch with new provider');
     }
 
     const newDispatch = CommunicationDispatchEntity.createWithNewProvider(communicationId, provider);
+
     await this.repository.createDispatch(newDispatch);
   }
 
@@ -539,6 +457,7 @@ export class CommunicationService {
 
   async getDispatchesByCommunicationId(communicationId: string): Promise<FindCommunicationDispatchesOutput> {
     const communication = await this.repository.findById(communicationId);
+
     if (!communication) {
       throw createHttpError.NotFound(`Communication ${communicationId} not found`);
     }
@@ -552,6 +471,7 @@ export class CommunicationService {
 
   async getDispatchById(dispatchId: string): Promise<CommunicationDispatchOutput> {
     const dispatch = await this.repository.findDispatchById(dispatchId);
+
     if (!dispatch) {
       throw createHttpError.NotFound(`Dispatch ${dispatchId} not found`);
     }
@@ -561,6 +481,7 @@ export class CommunicationService {
 
   private async sendEmail(dispatch: CommunicationDispatchEntity): Promise<void> {
     const communication = await this.repository.findById(dispatch.communicationId);
+
     if (!communication) {
       throw createHttpError.NotFound(`Communication ${dispatch.communicationId} not found`);
     }
@@ -621,6 +542,109 @@ export class CommunicationService {
     };
 
     const emailProvider = this.getEmailProvider(dispatch.provider);
+
     await emailProvider.send(emailInput);
+  }
+
+  private async validateTemplateInput(input: CreateCommunicationInput): Promise<void> {
+    if (input.sourceType !== COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
+      return;
+    }
+
+    if (!input.templateVersionId) {
+      throw new createHttpError.BadRequest('Template version ID is required when source type is template');
+    }
+
+    const templateVersionExists = await this.templateVersionRepository.findById(input.templateVersionId);
+
+    if (!templateVersionExists) {
+      throw new createHttpError.NotFound(`Template version ${input.templateVersionId} not found`);
+    }
+
+    if (!templateVersionExists.isActive) {
+      throw new createHttpError.BadRequest(`Template version ${input.templateVersionId} is not active`);
+    }
+
+    if (templateVersionExists.variablesSchemaJson && !input.templateVariablesJson) {
+      throw new createHttpError.BadRequest('Template variables JSON is required when template has variables');
+    }
+
+    if (templateVersionExists.variablesSchemaJson && input.templateVariablesJson) {
+      const templateVariables = Object.keys(templateVersionExists.variablesSchemaJson);
+      const providedVariables = Object.keys(input.templateVariablesJson);
+
+      const missingVariables = templateVariables.filter((variable) => !providedVariables.includes(variable));
+
+      if (missingVariables.length > 0) {
+        throw new createHttpError.BadRequest(`Missing required template variables: ${missingVariables.join(', ')}`);
+      }
+    }
+  }
+
+  private getEmailProvider(provider: EmailProviderName): EmailProvider {
+    if (provider === EMAIL_PROVIDERS.RESEND) {
+      return this.resendEmailProvider;
+    }
+
+    if (provider === EMAIL_PROVIDERS.MAILTRAP) {
+      return this.mailtrapEmailProvider;
+    }
+
+    throw createHttpError.BadRequest(`Unsupported email provider: ${provider}`);
+  }
+
+  private toOutput(communication: CommunicationEntity): UpdateCommunicationOutput {
+    return {
+      id: communication.id,
+      channel: communication.channel,
+      sourceType: communication.sourceType,
+      status: communication.status,
+      subject: communication.subject,
+      body: communication.body,
+      templateVersionId: communication.templateVersionId,
+      templateVariablesJson: communication.templateVariablesJson,
+      scheduledAt: communication.scheduledAt,
+      processingAt: communication.processingAt,
+      sentAt: communication.sentAt,
+      createdByUserId: communication.createdByUserId,
+      createdAt: communication.createdAt,
+      updatedAt: communication.updatedAt,
+    };
+  }
+
+  private toAttachmentOutput(attachment: CommunicationAttachmentEntity): CommunicationAttachmentOutput {
+    return {
+      id: attachment.id,
+      communicationId: attachment.communicationId,
+      originalFileName: attachment.originalFileName,
+      storageProvider: attachment.storageProvider,
+      storageKey: attachment.storageKey,
+      fileUrl: `${process.env.CLOUDFLARE_PUBLIC_URL}/${attachment.storageKey}`,
+      mimeType: attachment.mimeType,
+      fileSizeBytes: attachment.fileSizeBytes,
+      createdAt: attachment.createdAt,
+    };
+  }
+
+  private toRecipientOutput(recipient: CommunicationRecipientEntity): CommunicationRecipientOutput {
+    return {
+      id: recipient.id,
+      communicationId: recipient.communicationId,
+      recipientType: recipient.recipientType,
+      email: recipient.email,
+      createdAt: recipient.createdAt,
+    };
+  }
+
+  private toDispatchOutput(dispatch: CommunicationDispatchEntity): CommunicationDispatchOutput {
+    return {
+      id: dispatch.id,
+      communicationId: dispatch.communicationId,
+      attemptNumber: dispatch.attemptNumber,
+      provider: dispatch.provider,
+      status: dispatch.status,
+      startedAt: dispatch.startedAt,
+      finishedAt: dispatch.finishedAt,
+    };
   }
 }

@@ -26,7 +26,7 @@ export const createCommunicationSchema = z
     body: z.string().nullable().optional(),
     templateVersionId: z.string().nullable().optional(),
     templateVariablesJson: templateVariablesJsonSchema.optional(),
-    scheduledAt: z.coerce.date().nullable().optional(),
+    scheduledAt: z.coerce.date().optional(),
     recipients: z.array(createRecipientSchema).min(1, 'At least one recipient is required'),
   })
 
@@ -133,7 +133,7 @@ export const updateCommunicationSchema = z.object({
   body: z.string().nullable().optional(),
   templateVersionId: z.string().nullable().optional(),
   templateVariablesJson: templateVariablesJsonSchema.optional(),
-  scheduledAt: z.coerce.date().nullable().optional(),
+  scheduledAt: z.coerce.date().optional(),
 });
 
 export const communicationIdSchema = z.object({
