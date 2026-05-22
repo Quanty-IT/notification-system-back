@@ -1,4 +1,5 @@
 import createHttpError from 'http-errors';
+import { TemplateVersionEntity } from '@/modules/template-versions/domain/template-version.entity';
 import { TemplateVersionRepository } from '@/modules/template-versions/domain/template-version.repository';
 import { renderTemplate } from '@/shared';
 import { COMMUNICATION_SOURCE_TYPES, COMMUNICATION_STATUSES } from '../domain/communication.constants';
@@ -57,16 +58,18 @@ export class CommunicationService {
   ) {}
 
   async create(input: CreateCommunicationInput, createdByUserId: string): Promise<CreateCommunicationOutput> {
-    await this.validateTemplateInput(input);
+    const templateVersion = await this.validateTemplateInput(input);
 
     const status = input.scheduledAt ? COMMUNICATION_STATUSES.SCHEDULED : COMMUNICATION_STATUSES.DRAFT;
+    const subject = input.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE ? templateVersion?.subject : input.subject;
+    const body = input.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE ? templateVersion?.body : input.body;
 
     const communication = CommunicationEntity.create(
       input.channel,
       input.sourceType,
       status,
-      input.subject,
-      input.body,
+      subject,
+      body,
       input.templateVersionId,
       input.templateVariablesJson,
       input.scheduledAt,
@@ -546,31 +549,31 @@ export class CommunicationService {
     await emailProvider.send(emailInput);
   }
 
-  private async validateTemplateInput(input: CreateCommunicationInput): Promise<void> {
+  private async validateTemplateInput(input: CreateCommunicationInput): Promise<TemplateVersionEntity | null> {
     if (input.sourceType !== COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
-      return;
+      return null;
     }
 
     if (!input.templateVersionId) {
       throw new createHttpError.BadRequest('Template version ID is required when source type is template');
     }
 
-    const templateVersionExists = await this.templateVersionRepository.findById(input.templateVersionId);
+    const templateVersion = await this.templateVersionRepository.findById(input.templateVersionId);
 
-    if (!templateVersionExists) {
+    if (!templateVersion) {
       throw new createHttpError.NotFound(`Template version ${input.templateVersionId} not found`);
     }
 
-    if (!templateVersionExists.isActive) {
+    if (!templateVersion.isActive) {
       throw new createHttpError.BadRequest(`Template version ${input.templateVersionId} is not active`);
     }
 
-    if (templateVersionExists.variablesSchemaJson && !input.templateVariablesJson) {
+    if (templateVersion.variablesSchemaJson && !input.templateVariablesJson) {
       throw new createHttpError.BadRequest('Template variables JSON is required when template has variables');
     }
 
-    if (templateVersionExists.variablesSchemaJson && input.templateVariablesJson) {
-      const templateVariables = Object.keys(templateVersionExists.variablesSchemaJson);
+    if (templateVersion.variablesSchemaJson && input.templateVariablesJson) {
+      const templateVariables = Object.keys(templateVersion.variablesSchemaJson);
       const providedVariables = Object.keys(input.templateVariablesJson);
 
       const missingVariables = templateVariables.filter((variable) => !providedVariables.includes(variable));
@@ -579,6 +582,8 @@ export class CommunicationService {
         throw new createHttpError.BadRequest(`Missing required template variables: ${missingVariables.join(', ')}`);
       }
     }
+
+    return templateVersion;
   }
 
   private getEmailProvider(provider: EmailProviderName): EmailProvider {

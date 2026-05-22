@@ -34,7 +34,7 @@ export const createCommunicationSchema = z
   .refine(
     (data) => {
       if (data.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
-        return data.templateVersionId !== null && data.templateVersionId !== undefined;
+        return Boolean(data.templateVersionId);
       }
 
       return true;
@@ -45,18 +45,18 @@ export const createCommunicationSchema = z
     },
   )
 
-  // TEMPLATE: body não pode ser enviado manualmente
+  // TEMPLATE: subject e body não podem ser enviados manualmente
   .refine(
     (data) => {
       if (data.sourceType === COMMUNICATION_SOURCE_TYPES.TEMPLATE) {
-        return data.body === null || data.body === undefined;
+        return !data.subject && !data.body;
       }
 
       return true;
     },
     {
-      message: 'body cannot be provided when sourceType is template',
-      path: ['body'],
+      message: 'subject and body cannot be provided when sourceType is template',
+      path: ['subject'],
     },
   )
 
@@ -64,7 +64,7 @@ export const createCommunicationSchema = z
   .refine(
     (data) => {
       if (data.sourceType === COMMUNICATION_SOURCE_TYPES.MANUAL) {
-        return data.templateVersionId === undefined && data.templateVariablesJson === undefined;
+        return !data.templateVersionId && !data.templateVariablesJson;
       }
 
       return true;
@@ -75,33 +75,18 @@ export const createCommunicationSchema = z
     },
   )
 
-  // MANUAL: subject obrigatório
+  // MANUAL: subject e body obrigatórios
   .refine(
     (data) => {
       if (data.sourceType === COMMUNICATION_SOURCE_TYPES.MANUAL) {
-        return typeof data.subject === 'string' && data.subject.trim().length > 0;
+        return Boolean(data.subject?.trim()) && Boolean(data.body?.trim());
       }
 
       return true;
     },
     {
-      message: 'subject is required when sourceType is manual',
+      message: 'subject and body are required when sourceType is manual',
       path: ['subject'],
-    },
-  )
-
-  // MANUAL: body obrigatório
-  .refine(
-    (data) => {
-      if (data.sourceType === COMMUNICATION_SOURCE_TYPES.MANUAL) {
-        return typeof data.body === 'string' && data.body.trim().length > 0;
-      }
-
-      return true;
-    },
-    {
-      message: 'body is required when sourceType is manual',
-      path: ['body'],
     },
   )
 
