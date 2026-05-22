@@ -220,7 +220,6 @@ export class CommunicationService {
       throw createHttpError.BadRequest('Communication cannot be sent');
     }
 
-    communication.updateScheduledAt(null);
     communication.markAsScheduled();
 
     await this.repository.update(communication);
