@@ -124,26 +124,10 @@ export class CommunicationController {
     return response.status(204).send();
   }
 
-  public async createInitialDispatch(request: Request<{ id: string }>, response: Response) {
-    const { id } = communicationIdSchema.parse(request.params);
-
-    await this.service.createInitialDispatch(id);
-
-    return response.status(201).send();
-  }
-
-  public async findDispatches(request: Request<{ id: string }>, response: Response) {
+  public async getDispatchesByCommunicationId(request: Request<{ id: string }>, response: Response) {
     const { id } = communicationIdSchema.parse(request.params);
 
     const output = await this.service.getDispatchesByCommunicationId(id);
-
-    return response.status(200).json(output);
-  }
-
-  public async findDispatchById(request: Request<{ id: string; dispatchId: string }>, response: Response) {
-    const { dispatchId } = communicationDispatchIdSchema.parse(request.params);
-
-    const output = await this.service.getDispatchById(dispatchId);
 
     return response.status(200).json(output);
   }

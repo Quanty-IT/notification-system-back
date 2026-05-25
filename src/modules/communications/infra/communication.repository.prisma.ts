@@ -137,14 +137,6 @@ export class CommunicationRepositoryPrisma implements CommunicationRepository {
     return dispatches.map(CommunicationDispatchMapper.toDomain);
   }
 
-  async findDispatchById(dispatchId: string): Promise<CommunicationDispatchEntity | null> {
-    const dispatch = await this.prisma.communicationDispatch.findUnique({
-      where: { id: dispatchId },
-    });
-
-    return dispatch ? CommunicationDispatchMapper.toDomain(dispatch) : null;
-  }
-
   async updateDispatch(dispatch: CommunicationDispatchEntity): Promise<void> {
     await this.prisma.communicationDispatch.update({
       where: { id: dispatch.id },

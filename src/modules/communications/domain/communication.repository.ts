@@ -29,7 +29,6 @@ export interface CommunicationRepository {
 
   createDispatch(dispatch: CommunicationDispatchEntity): Promise<void>;
   findDispatchesByCommunicationId(communicationId: string): Promise<CommunicationDispatchEntity[]>;
-  findDispatchById(dispatchId: string): Promise<CommunicationDispatchEntity | null>;
   updateDispatch(dispatch: CommunicationDispatchEntity): Promise<void>;
   findPendingCommunications(): Promise<CommunicationEntity[]>;
   findLastDispatchByCommunicationId(communicationId: string): Promise<CommunicationDispatchEntity | null>;

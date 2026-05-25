@@ -365,24 +365,6 @@ export class CommunicationService {
     };
   }
 
-  async createInitialDispatch(communicationId: string): Promise<void> {
-    const communication = await this.repository.findById(communicationId);
-
-    if (!communication) {
-      throw createHttpError.NotFound(`Communication ${communicationId} not found`);
-    }
-
-    const existingDispatch = await this.repository.findLastDispatchByCommunicationId(communicationId);
-
-    if (existingDispatch?.isProcessing()) {
-      throw createHttpError.BadRequest('Communication already has a dispatch in progress');
-    }
-
-    const dispatch = CommunicationDispatchEntity.create(communicationId);
-
-    await this.repository.createDispatch(dispatch);
-  }
-
   async processCommunication(communicationId: string): Promise<void> {
     const communication = await this.repository.findById(communicationId);
 
@@ -469,16 +451,6 @@ export class CommunicationService {
     return {
       dispatches: dispatches.map((dispatch) => this.toDispatchOutput(dispatch)),
     };
-  }
-
-  async getDispatchById(dispatchId: string): Promise<CommunicationDispatchOutput> {
-    const dispatch = await this.repository.findDispatchById(dispatchId);
-
-    if (!dispatch) {
-      throw createHttpError.NotFound(`Dispatch ${dispatchId} not found`);
-    }
-
-    return this.toDispatchOutput(dispatch);
   }
 
   private async sendEmail(dispatch: CommunicationDispatchEntity): Promise<void> {

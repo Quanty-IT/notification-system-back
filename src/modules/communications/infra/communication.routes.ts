@@ -8,7 +8,6 @@ import { TemplateVersionRepositoryPrisma } from '@/modules/template-versions/inf
 
 import {
   communicationAttachmentIdSchema,
-  communicationDispatchIdSchema,
   communicationIdSchema,
   communicationRecipientIdSchema,
   createCommunicationSchema,
@@ -211,7 +210,6 @@ registry.register('CreateRecipient', createRecipientSchema);
 registry.register('CommunicationRecipientId', communicationRecipientIdSchema);
 registry.register('CommunicationRecipientResponse', communicationRecipientResponseSchema);
 registry.register('CommunicationRecipientListResponse', communicationRecipientListResponseSchema);
-registry.register('CommunicationDispatchId', communicationDispatchIdSchema);
 registry.register('CommunicationDispatchResponse', communicationDispatchResponseSchema);
 registry.register('CommunicationDispatchListResponse', communicationDispatchListResponseSchema);
 
@@ -399,6 +397,35 @@ registry.registerPath({
 });
 
 registry.registerPath({
+  method: 'get',
+  path: `${BASE_PATH}/{id}/dispatches`,
+  tags: [TAG],
+  security: [
+    {
+      bearerAuth: [],
+      apiKeyAuth: [],
+    },
+  ],
+  request: {
+    params: communicationIdSchema,
+  },
+  responses: {
+    200: {
+      description: 'Dispatches retrieved successfully',
+      content: {
+        'application/json': {
+          schema: communicationDispatchListResponseSchema,
+          example: communicationDispatchListResponseExample,
+        },
+      },
+    },
+    404: {
+      description: 'Communication not found',
+    },
+  },
+});
+
+registry.registerPath({
   method: 'post',
   path: `${BASE_PATH}/{id}/attachments`,
   tags: [TAG],
@@ -504,7 +531,7 @@ registry.registerPath({
       description: 'Recipient added successfully',
       content: {
         'application/json': {
-          schema: { $ref: '#/components/schemas/CommunicationRecipientResponse' },
+          schema: communicationRecipientResponseSchema,
         },
       },
     },
@@ -535,7 +562,7 @@ registry.registerPath({
       description: 'Recipients retrieved successfully',
       content: {
         'application/json': {
-          schema: { $ref: '#/components/schemas/CommunicationRecipientListResponse' },
+          schema: communicationRecipientListResponseSchema,
         },
       },
     },
@@ -571,139 +598,6 @@ registry.registerPath({
   },
 });
 
-registry.registerPath({
-  method: 'post',
-  path: `${BASE_PATH}/{id}/dispatches`,
-  tags: [TAG],
-  security: [
-    {
-      bearerAuth: [],
-      apiKeyAuth: [],
-    },
-  ],
-  request: {
-    params: communicationIdSchema,
-  },
-  responses: {
-    201: {
-      description: 'Dispatch created successfully',
-    },
-    404: {
-      description: 'Communication not found',
-    },
-    400: {
-      description: 'Bad request',
-    },
-  },
-});
-
-registry.registerPath({
-  method: 'get',
-  path: `${BASE_PATH}/{id}/dispatches`,
-  tags: [TAG],
-  security: [
-    {
-      bearerAuth: [],
-      apiKeyAuth: [],
-    },
-  ],
-  request: {
-    params: communicationIdSchema,
-  },
-  responses: {
-    200: {
-      description: 'Dispatches retrieved successfully',
-      content: {
-        'application/json': {
-          schema: communicationDispatchListResponseSchema,
-          example: communicationDispatchListResponseExample,
-        },
-      },
-    },
-    404: {
-      description: 'Communication not found',
-    },
-  },
-});
-
-registry.registerPath({
-  method: 'get',
-  path: `${BASE_PATH}/{id}/dispatches/{dispatchId}`,
-  tags: [TAG],
-  security: [
-    {
-      bearerAuth: [],
-      apiKeyAuth: [],
-    },
-  ],
-  request: {
-    params: communicationDispatchIdSchema,
-  },
-  responses: {
-    200: {
-      description: 'Dispatch retrieved successfully',
-      content: {
-        'application/json': {
-          schema: communicationDispatchResponseSchema,
-          example: communicationDispatchResponseExample,
-        },
-      },
-    },
-    404: {
-      description: 'Dispatch not found',
-    },
-  },
-});
-
-registry.registerPath({
-  method: 'post',
-  path: `${BASE_PATH}/{id}/dispatches/{dispatchId}/process`,
-  tags: [TAG],
-  security: [
-    {
-      bearerAuth: [],
-      apiKeyAuth: [],
-    },
-  ],
-  request: {
-    params: communicationDispatchIdSchema,
-  },
-  responses: {
-    204: {
-      description: 'Dispatch processed successfully',
-    },
-    404: {
-      description: 'Dispatch not found',
-    },
-    400: {
-      description: 'Bad request',
-    },
-  },
-});
-
-registry.registerPath({
-  method: 'get',
-  path: `${BASE_PATH}/dispatches/pending`,
-  tags: [TAG],
-  security: [
-    {
-      bearerAuth: [],
-      apiKeyAuth: [],
-    },
-  ],
-  responses: {
-    200: {
-      description: 'Pending dispatches retrieved successfully',
-      content: {
-        'application/json': {
-          schema: communicationDispatchListResponseSchema,
-          example: communicationDispatchListResponseExample,
-        },
-      },
-    },
-  },
-});
-
 export const communicationRoutes = () => {
   const router = Router();
 
@@ -720,6 +614,7 @@ export const communicationRoutes = () => {
     mailtrapEmailProvider,
     fileStorage,
   );
+
   const controller = new CommunicationController(service);
 
   router.post('/', controller.create.bind(controller));
@@ -730,6 +625,8 @@ export const communicationRoutes = () => {
 
   router.post('/:id/send', controller.sendNow.bind(controller));
 
+  router.get('/:id/dispatches', controller.getDispatchesByCommunicationId.bind(controller));
+
   router.post('/:id/attachments', upload.single('file'), controller.addAttachment.bind(controller));
   router.get('/:id/attachments', controller.findAttachments.bind(controller));
   router.delete('/:id/attachments/:attachmentId', controller.removeAttachment.bind(controller));
@@ -737,10 +634,6 @@ export const communicationRoutes = () => {
   router.post('/:id/recipients', controller.addRecipient.bind(controller));
   router.get('/:id/recipients', controller.findRecipients.bind(controller));
   router.delete('/:id/recipients/:recipientId', controller.removeRecipient.bind(controller));
-
-  router.post('/:id/dispatches', controller.createInitialDispatch.bind(controller));
-  router.get('/:id/dispatches', controller.findDispatches.bind(controller));
-  router.get('/:id/dispatches/:dispatchId', controller.findDispatchById.bind(controller));
 
   return router;
 };

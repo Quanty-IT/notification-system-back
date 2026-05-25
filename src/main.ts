@@ -41,10 +41,17 @@ app.use('/communications', apiKeyAuthMiddleware, bearerAuthMiddleware, communica
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 app.use(errorHandler);
 
-cronJobs.start();
+const port = Number(process.env.PORT) || 3000;
+app.listen(port, () => {
+  cronJobs.start();
+});
 
-const PORT = Number(process.env.PORT) || 3000;
-app.listen(PORT, () => {
-  console.info(`🚀 Server running on http://localhost:${PORT}`);
-  console.info('📧 CRON jobs iniciadas - processando dispatches a cada minuto');
+process.on('SIGINT', () => {
+  cronJobs.stop();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  cronJobs.stop();
+  process.exit(0);
 });

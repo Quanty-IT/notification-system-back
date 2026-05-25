@@ -14,7 +14,7 @@ import { TemplateVersionController } from './template-version.controller';
 import { TemplateVersionRepositoryPrisma } from './template-version.repository.prisma';
 
 const BASE_PATH = '/template-versions';
-const TAG = 'TemplateVersions';
+const TAG = 'Template Versions';
 
 const templateVersionResponseSchema = z.object({
   id: z.uuid(),
