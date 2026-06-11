@@ -15,13 +15,13 @@ export class AuthService {
     const user = await this.repository.findByEmail(email);
 
     if (!user) {
-      throw createHttpError.Unauthorized('Credenciais inválidas');
+      throw createHttpError.Unauthorized('Invalid credentials');
     }
 
     const passwordMatches = await this.hashProvider.compare(password, user.password);
 
     if (!passwordMatches) {
-      throw createHttpError.Unauthorized('Credenciais inválidas');
+      throw createHttpError.Unauthorized('Invalid credentials');
     }
 
     const accessToken = await this.jwtProvider.sign({
